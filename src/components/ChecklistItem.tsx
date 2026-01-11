@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Camera, CheckCircle, XCircle, AlertCircle, Minus, Sparkles } from "lucide-react";
+import { Camera, CheckCircle, XCircle, AlertCircle, Minus, Sparkles, Power, PowerOff, Lock, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChecklistItem as ChecklistItemType } from "@/lib/formTemplates";
 
@@ -101,30 +101,113 @@ export function ChecklistItem({
           </div>
         );
 
+      case "on-off":
+        return (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={value === true ? "default" : "outline"}
+              className={cn(
+                "gap-1.5 transition-all",
+                value === true && "bg-success hover:bg-success/90 text-success-foreground"
+              )}
+              onClick={() => onChange(value === true ? null : true)}
+            >
+              <Power className="h-4 w-4" />
+              ON
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={value === false ? "default" : "outline"}
+              className={cn(
+                "gap-1.5 transition-all",
+                value === false && "bg-muted hover:bg-muted/90 text-muted-foreground"
+              )}
+              onClick={() => onChange(value === false ? null : false)}
+            >
+              <PowerOff className="h-4 w-4" />
+              OFF
+            </Button>
+          </div>
+        );
+
+      case "open-closed":
+        return (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={value === true ? "default" : "outline"}
+              className={cn(
+                "gap-1.5 transition-all",
+                value === true && "bg-success hover:bg-success/90 text-success-foreground"
+              )}
+              onClick={() => onChange(value === true ? null : true)}
+            >
+              <Unlock className="h-4 w-4" />
+              OPEN
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={value === false ? "default" : "outline"}
+              className={cn(
+                "gap-1.5 transition-all",
+                value === false && "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              )}
+              onClick={() => onChange(value === false ? null : false)}
+            >
+              <Lock className="h-4 w-4" />
+              CLOSED
+            </Button>
+          </div>
+        );
+
       case "number":
         return (
-          <Input
-            type="number"
-            value={value as number || ""}
-            onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
-            className="w-32"
-            placeholder="0"
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={value as number ?? ""}
+              onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
+              className="w-32"
+              placeholder="0"
+            />
+            {item.unit && (
+              <span className="text-sm text-muted-foreground font-medium">{item.unit}</span>
+            )}
+          </div>
         );
 
       case "text":
         return (
-          <Textarea
-            value={value as string || ""}
+          <Input
+            type="text"
+            value={value as string ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
-            className="min-h-[80px] resize-none"
-            placeholder="Enter details..."
+            className="max-w-md"
+            placeholder={item.placeholder || "Enter details..."}
           />
         );
+
+      case "textarea":
+        return (
+          <Textarea
+            value={value as string ?? ""}
+            onChange={(e) => onChange(e.target.value || null)}
+            className="min-h-[100px] resize-none"
+            placeholder={item.placeholder || "Enter details..."}
+          />
+        );
+
+      default:
+        return null;
     }
   };
 
-  const hasIssue = value === false;
+  const hasIssue = value === false && (item.type === "pass-fail" || item.type === "ok-issue" || item.type === "open-closed");
 
   return (
     <div className={cn(
@@ -191,32 +274,34 @@ export function ChecklistItem({
         {renderInput()}
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="text-xs h-8 gap-1.5 text-muted-foreground hover:text-foreground"
-          onClick={() => setShowNote(!showNote)}
-        >
-          <Minus className="h-3 w-3 rotate-90" />
-          {showNote ? "Hide" : "Add"} Note
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="text-xs h-8 gap-1.5 text-muted-foreground hover:text-foreground"
-          onClick={() => setShowPhotoUpload(!showPhotoUpload)}
-        >
-          <Camera className="h-3 w-3" />
-          Photo
-        </Button>
-      </div>
+      {/* Actions - hide for textarea type since it already handles text input */}
+      {item.type !== "textarea" && (
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="text-xs h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={() => setShowNote(!showNote)}
+          >
+            <Minus className="h-3 w-3 rotate-90" />
+            {showNote ? "Hide" : "Add"} Note
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="text-xs h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={() => setShowPhotoUpload(!showPhotoUpload)}
+          >
+            <Camera className="h-3 w-3" />
+            Photo
+          </Button>
+        </div>
+      )}
 
       {/* Note Field */}
-      {showNote && (
+      {showNote && item.type !== "textarea" && (
         <div className="mt-3 pt-3 border-t border-border/50">
           <Textarea
             value={note || ""}
