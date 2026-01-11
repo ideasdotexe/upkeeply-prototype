@@ -17,7 +17,8 @@ export type ChecklistItemType =
   | "open-closed" 
   | "text" 
   | "textarea" 
-  | "number";
+  | "number"
+  | "combined-toggle"; // Combined: text identifier + toggle status in one row
 
 export interface ChecklistItem {
   id: string;
@@ -29,6 +30,15 @@ export interface ChecklistItem {
   placeholder?: string;
   defaultValue?: string | boolean;
   options?: [string, string];
+  // For combined-toggle type
+  toggleType?: "on-off" | "open-closed";
+  identifierLabel?: string; // e.g., "Fan #", "Pump #"
+}
+
+export interface FormSection {
+  id: string;
+  title: string;
+  items: ChecklistItem[];
 }
 
 export interface FormTemplate {
@@ -40,8 +50,210 @@ export interface FormTemplate {
   color: string;
   frequency: "daily" | "weekly" | "monthly";
   estimatedTime: string;
-  items: ChecklistItem[];
+  sections: FormSection[];
+  items: ChecklistItem[]; // Flattened for backward compatibility
 }
+
+// Section definitions for Daily Maintenance
+const dailyMaintenanceSections: FormSection[] = [
+  {
+    id: "parking-exterior",
+    title: "Parking & Exterior",
+    items: [
+      { id: "parking-residential", label: "Residential parking – P2, P3, P4 – storage items on parking spots", type: "ok-issue", required: true },
+      { id: "parking-visitors", label: "Visitors parking – P1", type: "ok-issue", required: true },
+      { id: "building-exterior", label: "Building exterior", type: "ok-issue", required: true },
+    ]
+  },
+  {
+    id: "roof-fan-room",
+    title: "Roof – Fan Room",
+    items: [
+      { id: "roof-exhaust-fan-1", label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", placeholder: "Enter #", required: true, defaultValue: true },
+      { id: "roof-exhaust-fan-2", label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", placeholder: "Enter #", required: true, defaultValue: true },
+      { id: "roof-exhaust-fan-3", label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", placeholder: "Enter #", required: true, defaultValue: true },
+      { id: "roof-exhaust-fan-4", label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", placeholder: "Enter #", required: true, defaultValue: true },
+    ]
+  },
+  {
+    id: "elevator-mechanical",
+    title: "Elevator / Mechanical Room",
+    items: [
+      { id: "elev-exhaust-fan", label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", placeholder: "Enter #", required: true, defaultValue: true },
+      { id: "elev-evap-tank-1", label: "Evaporation Tank Level", type: "text", placeholder: "¼ - ¾", required: true },
+      { id: "elev-evap-tank-2", label: "Evaporation Tank Level", type: "text", placeholder: "¼ - ¾", required: true },
+      { id: "elev-fire-hose-pressure", label: "Fire Hose Cabinet Pressure", type: "number", required: true, unit: "PSI" },
+    ]
+  },
+  {
+    id: "corridor",
+    title: "Corridor",
+    items: [
+      { id: "corridor-controller-pressure", label: "Controller Air Pressure", type: "number", unit: "PSI", required: true },
+      { id: "corridor-supply-fan", label: "Supply Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", placeholder: "Enter #", required: true },
+      { id: "corridor-controller-temp", label: "Controller Air Temperature", type: "number", unit: "°C", required: true },
+      { id: "corridor-circ-pump", label: "Circulation Pump", type: "on-off", required: true },
+      { id: "corridor-supply-water-temp", label: "Supply Water Temperature", type: "number", unit: "°C", required: true },
+      { id: "corridor-return-water-temp", label: "Return Water Temperature", type: "number", unit: "°C", required: true },
+      { id: "corridor-outdoor-temp", label: "Outdoor Air Temperature", type: "number", unit: "°C", required: true },
+    ]
+  },
+  {
+    id: "ground-floor",
+    title: "Ground Floor",
+    items: [
+      { id: "ground-intake-temp", label: "Intake Air Temperature", type: "number", unit: "°C", required: true },
+      { id: "ground-supply-temp", label: "Supply Air Temperature", type: "number", unit: "°C", required: true },
+      { id: "ground-controller-pressure", label: "Controller Air Pressure", type: "number", unit: "PSI", required: true },
+      { id: "ground-supply-fan", label: "Supply Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", placeholder: "Enter #", required: true },
+      { id: "ground-controller-temp", label: "Controller Air Temperature", type: "number", unit: "°C", required: true },
+      { id: "ground-circ-pump", label: "Circulation Pump", type: "on-off", required: true },
+      { id: "ground-exhaust-fan-1", label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", placeholder: "Enter #", required: true, defaultValue: true },
+      { id: "ground-exhaust-fan-2", label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", placeholder: "Enter #", required: true, defaultValue: true },
+    ]
+  },
+  {
+    id: "sprinkler-room",
+    title: "Sprinkler Room",
+    items: [
+      { id: "sprinkler-fire-pump-pressure", label: "Fire Pump Discharge Pressure", type: "number", unit: "PSI", required: true },
+      { id: "sprinkler-water-meter", label: "Water Meter Reading", type: "number", required: true },
+      { id: "sprinkler-valves", label: "Sprinkler Valves", type: "open-closed", required: true, defaultValue: true },
+    ]
+  },
+  {
+    id: "boiler-room-1",
+    title: "Boiler Room (1)",
+    items: [
+      { id: "boiler1-circ-pump-1", label: "Circulation Pump", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Pump #", placeholder: "Enter #", required: true },
+      { id: "boiler1-circ-pump-1-suction-temp", label: "Suction Temperature", type: "number", unit: "°C", required: true },
+      { id: "boiler1-circ-pump-2", label: "Circulation Pump", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Pump #", placeholder: "Enter #", required: true },
+      { id: "boiler1-circ-pump-2-supply-temp", label: "Supply Temperature", type: "number", unit: "°C", required: true },
+      { id: "boiler1-circ-pump-2-return-temp", label: "Return Temperature", type: "number", unit: "°C", required: true },
+      { id: "boiler1-controller-air-pressure", label: "Controller Air Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler1-air-compressor-tank-pressure", label: "Air Compressor Tank Air Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler1-bypass-prv-pressure", label: "Bypass PRV Air Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler1-prv-1-pressure", label: "PRV Air Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler1-prv-2-pressure", label: "PRV Air Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler1-makeup-prv-pressure", label: "Make Up PRV Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler1-dcw-booster-1", label: "DCW Booster Pump", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Pump #", placeholder: "Enter #", required: true },
+      { id: "boiler1-dcw-booster-1-pressure", label: "Discharge Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler1-dcw-booster-2", label: "DCW Booster Pump", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Pump #", placeholder: "Enter #", required: true },
+      { id: "boiler1-dcw-booster-2-pressure", label: "Discharge Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler1-dcw-booster-3", label: "DCW Booster Pump", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Pump #", placeholder: "Enter #", required: true },
+      { id: "boiler1-dcw-booster-3-pressure", label: "Discharge Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler1-dcw-high-zone-pressure", label: "DCW High Zone Supply Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler1-dcw-low-zone-pressure", label: "DCW Low Zone Supply Pressure", type: "number", unit: "PSI", required: true },
+    ]
+  },
+  {
+    id: "building-heating-high",
+    title: "Building Heating High Zone",
+    items: [
+      { id: "heat-high-design-temp", label: "Design Temperature", type: "number", unit: "°C", required: true },
+      { id: "heat-high-supply-temp", label: "Supply Temperature", type: "number", unit: "°C", required: true },
+      { id: "heat-high-return-temp", label: "Return Temperature", type: "number", unit: "°C", required: true },
+      { id: "heat-high-circ-pump", label: "Circulation Pump", type: "on-off", required: true },
+      { id: "heat-high-suction-pressure", label: "Suction Pressure", type: "number", unit: "PSI", required: true },
+      { id: "heat-high-discharge-pressure", label: "Discharge Pressure", type: "number", unit: "PSI", required: true },
+      { id: "heat-high-controller-pressure", label: "Controller Air Pressure", type: "number", unit: "PSI", required: true },
+      { id: "heat-high-diff-pressure", label: "Differential Air Pressure", type: "number", unit: "PSI", required: true },
+    ]
+  },
+  {
+    id: "building-heating-low",
+    title: "Building Heating Low Zone",
+    items: [
+      { id: "heat-low-design-temp", label: "Design Temperature", type: "number", unit: "°C", required: true },
+      { id: "heat-low-supply-temp", label: "Supply Temperature", type: "number", unit: "°C", required: true },
+      { id: "heat-low-return-temp", label: "Return Temperature", type: "number", unit: "°C", required: true },
+      { id: "heat-low-circ-pump", label: "Circulation Pump", type: "on-off", required: true },
+      { id: "heat-low-suction-pressure", label: "Suction Pressure", type: "number", unit: "PSI", required: true },
+      { id: "heat-low-discharge-pressure", label: "Discharge Pressure", type: "number", unit: "PSI", required: true },
+      { id: "heat-low-controller-pressure", label: "Controller Air Pressure", type: "number", unit: "PSI", required: true },
+      { id: "heat-low-diff-pressure", label: "Differential Air Pressure", type: "number", unit: "PSI", required: true },
+    ]
+  },
+  {
+    id: "boiler-room-2",
+    title: "Boiler Room (2)",
+    items: [
+      { id: "boiler2-primary-circ-pump", label: "Primary Circulation Pump", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Pump #", placeholder: "Enter #", required: true },
+      { id: "boiler2-primary-discharge-pressure", label: "Discharge Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler2-primary-discharge-temp", label: "Discharge Temperature", type: "number", unit: "°C", required: true },
+    ]
+  },
+  {
+    id: "dhw-low-zone",
+    title: "Domestic Hot Water Low Zone",
+    items: [
+      { id: "dhw-low-exchanger-pump", label: "Exchanger Circulation Pump", type: "on-off", required: true },
+      { id: "dhw-low-inlet-temp", label: "Inlet Temperature", type: "number", unit: "°C", required: true },
+      { id: "dhw-low-outlet-temp", label: "Outlet Temperature", type: "number", unit: "°C", required: true },
+      { id: "dhw-low-recirc-1", label: "Recirculation Pump", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Pump #", placeholder: "Enter #", required: true, defaultValue: true },
+      { id: "dhw-low-recirc-2", label: "Recirculation Pump", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Pump #", placeholder: "Enter #", required: true, defaultValue: true },
+    ]
+  },
+  {
+    id: "dhw-high-zone",
+    title: "Domestic Hot Water High Zone",
+    items: [
+      { id: "dhw-high-exchanger-pump", label: "Exchanger Circulation Pump", type: "on-off", required: true },
+      { id: "dhw-high-inlet-temp", label: "Inlet Temperature", type: "number", unit: "°C", required: true },
+      { id: "dhw-high-inlet-pressure", label: "Inlet Pressure", type: "number", unit: "PSI", required: true },
+      { id: "dhw-high-outlet-temp", label: "Outlet Temperature", type: "number", unit: "°C", required: true },
+      { id: "dhw-high-outlet-pressure", label: "Outlet Pressure", type: "number", unit: "PSI", required: true },
+      { id: "dhw-high-recirc-pump", label: "Recirculation Pump", type: "on-off", required: true, defaultValue: true },
+    ]
+  },
+  {
+    id: "ramp-heating",
+    title: "Ramp Heating System",
+    items: [
+      { id: "ramp-exchanger-pump", label: "Exchanger Circulation Pump", type: "on-off", required: true },
+      { id: "ramp-inlet-temp", label: "Inlet Temperature", type: "number", unit: "°C", required: true },
+      { id: "ramp-outlet-temp", label: "Outlet Temperature", type: "number", unit: "°C", required: true },
+      { id: "ramp-glycol-pump", label: "Glycol Circulation Pump", type: "on-off", required: true },
+      { id: "ramp-supply-temp", label: "Supply Temperature", type: "number", unit: "°C", required: true },
+      { id: "ramp-expansion-level", label: "Expansion Tank Level", type: "text", placeholder: "¼ - ¾", required: true },
+      { id: "ramp-expansion-pressure", label: "Expansion Tank Pressure", type: "number", unit: "PSI", required: true },
+    ]
+  },
+  {
+    id: "boiler-system",
+    title: "Boiler System",
+    items: [
+      { id: "boiler-fuel-level", label: "Fuel Level", type: "number", unit: "%", required: true },
+      { id: "boiler-1", label: "Boiler", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Boiler #", placeholder: "Enter #", required: true },
+      { id: "boiler-1-pressure", label: "Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler-2", label: "Boiler", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Boiler #", placeholder: "Enter #", required: true },
+      { id: "boiler-2-pressure", label: "Pressure", type: "number", unit: "PSI", required: true },
+      { id: "boiler-supply-header-temp", label: "Supply Header Temperature", type: "number", unit: "°C", required: true },
+      { id: "boiler-return-header-temp", label: "Return Header Temperature", type: "number", unit: "°C", required: true },
+    ]
+  },
+  {
+    id: "miscellaneous",
+    title: "Miscellaneous",
+    items: [
+      { id: "misc-sump-pumps", label: "Test Sump Pumps (Weekly)", type: "ok-issue", required: false },
+    ]
+  },
+  {
+    id: "comments",
+    title: "Comments",
+    items: [
+      { id: "comments", label: "Additional Comments", type: "textarea", placeholder: "Enter any additional observations or notes...", required: false },
+    ]
+  },
+];
+
+// Flatten sections to items for backward compatibility
+const flattenSections = (sections: FormSection[]): ChecklistItem[] => {
+  return sections.flatMap(section => 
+    section.items.map(item => ({ ...item, category: section.title }))
+  );
+};
 
 export const formTemplates: FormTemplate[] = [
   {
@@ -53,333 +265,152 @@ export const formTemplates: FormTemplate[] = [
     color: "bg-primary",
     frequency: "daily",
     estimatedTime: "25-35 min",
-    items: [
-      // ===== PARKING & EXTERIOR =====
-      { id: "parking-residential", label: "Residential parking – P2, P3, P4 – storage items on parking spots", type: "ok-issue", category: "Parking & Exterior", required: true },
-      { id: "parking-visitors", label: "Visitors parking – P1", type: "ok-issue", category: "Parking & Exterior", required: true },
-      { id: "building-exterior", label: "Building exterior", type: "ok-issue", category: "Parking & Exterior", required: true },
-
-      // ===== ROOF – FAN ROOM =====
-      { id: "roof-exhaust-fan-1-num", label: "Exhaust Fan #", type: "text", category: "Roof – Fan Room", placeholder: "Enter fan number" },
-      { id: "roof-exhaust-fan-1-status", label: "Exhaust Fan #1 Status", type: "on-off", category: "Roof – Fan Room", required: true, defaultValue: true },
-      { id: "roof-exhaust-fan-2-num", label: "Exhaust Fan #", type: "text", category: "Roof – Fan Room", placeholder: "Enter fan number" },
-      { id: "roof-exhaust-fan-2-status", label: "Exhaust Fan #2 Status", type: "on-off", category: "Roof – Fan Room", required: true, defaultValue: true },
-      { id: "roof-exhaust-fan-3-num", label: "Exhaust Fan #", type: "text", category: "Roof – Fan Room", placeholder: "Enter fan number" },
-      { id: "roof-exhaust-fan-3-status", label: "Exhaust Fan #3 Status", type: "on-off", category: "Roof – Fan Room", required: true, defaultValue: true },
-      { id: "roof-exhaust-fan-4-num", label: "Exhaust Fan #", type: "text", category: "Roof – Fan Room", placeholder: "Enter fan number" },
-      { id: "roof-exhaust-fan-4-status", label: "Exhaust Fan #4 Status", type: "on-off", category: "Roof – Fan Room", required: true, defaultValue: true },
-
-      // ===== ELEVATOR / MECHANICAL ROOM =====
-      { id: "elev-exhaust-fan-num", label: "Exhaust Fan #", type: "text", category: "Elevator / Mechanical Room", placeholder: "Enter fan number" },
-      { id: "elev-exhaust-fan-status", label: "Exhaust Fan Status", type: "on-off", category: "Elevator / Mechanical Room", required: true, defaultValue: true },
-      { id: "elev-evap-tank-1-num", label: "Evaporation Tank Level #", type: "text", category: "Elevator / Mechanical Room", placeholder: "Enter tank number" },
-      { id: "elev-evap-tank-1-level", label: "Evaporation Tank #1 Level", type: "text", category: "Elevator / Mechanical Room", required: true, placeholder: "¼ - ¾" },
-      { id: "elev-evap-tank-2-num", label: "Evaporation Tank Level #", type: "text", category: "Elevator / Mechanical Room", placeholder: "Enter tank number" },
-      { id: "elev-evap-tank-2-level", label: "Evaporation Tank #2 Level", type: "text", category: "Elevator / Mechanical Room", required: true, placeholder: "¼ - ¾" },
-      { id: "elev-fire-hose-pressure", label: "Fire Hose Cabinet Pressure", type: "number", category: "Elevator / Mechanical Room", required: true, unit: "PSI" },
-
-      // ===== GROUND FLOOR CORRIDOR FRESH AIR SUPPLY =====
-      { id: "ground-fan-num", label: "Fan #", type: "text", category: "Ground Floor Corridor", placeholder: "Enter fan number" },
-      { id: "ground-fan-status", label: "Fan Status", type: "on-off", category: "Ground Floor Corridor", required: true, defaultValue: true },
-      { id: "ground-intake-temp", label: "Intake Air Temperature", type: "number", category: "Ground Floor Corridor", required: true, unit: "°C" },
-      { id: "ground-supply-temp", label: "Supply Air Temperature", type: "number", category: "Ground Floor Corridor", required: true, unit: "°C" },
-      { id: "ground-controller-1-num", label: "Controller #", type: "text", category: "Ground Floor Corridor", placeholder: "Enter controller number" },
-      { id: "ground-controller-1-pressure", label: "Controller #1 Air Pressure", type: "number", category: "Ground Floor Corridor", required: true, unit: "PSI" },
-      { id: "ground-controller-2-num", label: "Controller #", type: "text", category: "Ground Floor Corridor", placeholder: "Enter controller number" },
-      { id: "ground-controller-2-temp", label: "Controller #2 Air Temperature", type: "number", category: "Ground Floor Corridor", required: true, unit: "°C" },
-      { id: "ground-circ-pump", label: "Circulation Pump", type: "on-off", category: "Ground Floor Corridor", required: true },
-      { id: "ground-exhaust-fan-1-num", label: "Exhaust Fan #", type: "text", category: "Ground Floor Corridor", placeholder: "Enter fan number" },
-      { id: "ground-exhaust-fan-1-status", label: "Exhaust Fan #1 Status", type: "on-off", category: "Ground Floor Corridor", required: true, defaultValue: true },
-      { id: "ground-exhaust-fan-2-num", label: "Exhaust Fan #", type: "text", category: "Ground Floor Corridor", placeholder: "Enter fan number" },
-      { id: "ground-exhaust-fan-2-status", label: "Exhaust Fan #2 Status", type: "on-off", category: "Ground Floor Corridor", required: true, defaultValue: true },
-
-      // ===== SPRINKLER ROOM =====
-      { id: "sprinkler-fire-pump-pressure", label: "Fire Pump Discharge Pressure", type: "number", category: "Sprinkler Room", required: true, unit: "PSI" },
-      { id: "sprinkler-water-meter", label: "Water Meter Reading", type: "number", category: "Sprinkler Room", required: true },
-      { id: "sprinkler-valves", label: "Sprinkler Valves", type: "open-closed", category: "Sprinkler Room", required: true, defaultValue: true },
-
-      // ===== BOILER ROOM (Page 1) =====
-      { id: "boiler1-circ-pump-1-num", label: "Circulation Pump #", type: "text", category: "Boiler Room (1)", placeholder: "Enter pump number" },
-      { id: "boiler1-circ-pump-1-status", label: "Circulation Pump #1 Status", type: "on-off", category: "Boiler Room (1)", required: true },
-      { id: "boiler1-circ-pump-1-suction-temp", label: "Circulation Pump #1 Suction Temperature", type: "number", category: "Boiler Room (1)", required: true, unit: "°C" },
-      { id: "boiler1-circ-pump-2-num", label: "Circulation Pump #", type: "text", category: "Boiler Room (1)", placeholder: "Enter pump number" },
-      { id: "boiler1-circ-pump-2-status", label: "Circulation Pump #2 Status", type: "on-off", category: "Boiler Room (1)", required: true },
-      { id: "boiler1-circ-pump-2-supply-temp", label: "Circulation Pump #2 Supply Temperature", type: "number", category: "Boiler Room (1)", required: true, unit: "°C" },
-      { id: "boiler1-circ-pump-2-return-temp", label: "Circulation Pump #2 Return Temperature", type: "number", category: "Boiler Room (1)", required: true, unit: "°C" },
-      { id: "boiler1-controller-air-pressure", label: "Controller Air Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-air-compressor-tank-pressure", label: "Air Compressor Tank Air Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-bypass-prv-pressure", label: "Bypass PRV Air Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-prv-1-num", label: "PRV #", type: "text", category: "Boiler Room (1)", placeholder: "Enter PRV number" },
-      { id: "boiler1-prv-1-pressure", label: "PRV #1 Air Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-prv-2-num", label: "PRV #", type: "text", category: "Boiler Room (1)", placeholder: "Enter PRV number" },
-      { id: "boiler1-prv-2-pressure", label: "PRV #2 Air Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-makeup-prv-pressure", label: "Make Up PRV Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-dcw-booster-1-num", label: "DCW Booster Pump #", type: "text", category: "Boiler Room (1)", placeholder: "Enter pump number" },
-      { id: "boiler1-dcw-booster-1-status", label: "DCW Booster Pump #1 Status", type: "on-off", category: "Boiler Room (1)", required: true },
-      { id: "boiler1-dcw-booster-1-pressure", label: "DCW Booster Pump #1 Discharge Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-dcw-booster-2-num", label: "DCW Booster Pump #", type: "text", category: "Boiler Room (1)", placeholder: "Enter pump number" },
-      { id: "boiler1-dcw-booster-2-status", label: "DCW Booster Pump #2 Status", type: "on-off", category: "Boiler Room (1)", required: true },
-      { id: "boiler1-dcw-booster-2-pressure", label: "DCW Booster Pump #2 Discharge Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-dcw-booster-3-num", label: "DCW Booster Pump #", type: "text", category: "Boiler Room (1)", placeholder: "Enter pump number" },
-      { id: "boiler1-dcw-booster-3-status", label: "DCW Booster Pump #3 Status", type: "on-off", category: "Boiler Room (1)", required: true },
-      { id: "boiler1-dcw-booster-3-pressure", label: "DCW Booster Pump #3 Discharge Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-dcw-high-zone-pressure", label: "DCW High Zone Supply Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-dcw-low-zone-pressure", label: "DCW Low Zone Supply Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-
-      // Building Heating High Zone
-      { id: "boiler1-heat-high-design-temp", label: "Building Heating High Zone - Design Temperature", type: "number", category: "Boiler Room (1)", required: true, unit: "°C" },
-      { id: "boiler1-heat-high-supply-temp", label: "Building Heating High Zone - Supply Temperature", type: "number", category: "Boiler Room (1)", required: true, unit: "°C" },
-      { id: "boiler1-heat-high-return-temp", label: "Building Heating High Zone - Return Temperature", type: "number", category: "Boiler Room (1)", required: true, unit: "°C" },
-      { id: "boiler1-heat-high-circ-pump", label: "Building Heating High Zone - Circulation Pump", type: "on-off", category: "Boiler Room (1)", required: true },
-      { id: "boiler1-heat-high-suction-pressure", label: "Building Heating High Zone - Suction Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-heat-high-discharge-pressure", label: "Building Heating High Zone - Discharge Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-heat-high-controller-pressure", label: "Building Heating High Zone - Controller Air Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-heat-high-diff-pressure", label: "Building Heating High Zone - Differential Air Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-
-      // Building Heating Low Zone
-      { id: "boiler1-heat-low-design-temp", label: "Building Heating Low Zone - Design Temperature", type: "number", category: "Boiler Room (1)", required: true, unit: "°C" },
-      { id: "boiler1-heat-low-supply-temp", label: "Building Heating Low Zone - Supply Temperature", type: "number", category: "Boiler Room (1)", required: true, unit: "°C" },
-      { id: "boiler1-heat-low-return-temp", label: "Building Heating Low Zone - Return Temperature", type: "number", category: "Boiler Room (1)", required: true, unit: "°C" },
-      { id: "boiler1-heat-low-circ-pump", label: "Building Heating Low Zone - Circulation Pump", type: "on-off", category: "Boiler Room (1)", required: true },
-      { id: "boiler1-heat-low-suction-pressure", label: "Building Heating Low Zone - Suction Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-heat-low-discharge-pressure", label: "Building Heating Low Zone - Discharge Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-heat-low-controller-pressure", label: "Building Heating Low Zone - Controller Air Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-      { id: "boiler1-heat-low-diff-pressure", label: "Building Heating Low Zone - Differential Air Pressure", type: "number", category: "Boiler Room (1)", required: true, unit: "PSI" },
-
-      // ===== BOILER ROOM (Page 2) =====
-      { id: "boiler2-primary-circ-pump-num", label: "Primary Circulation Pump #", type: "text", category: "Boiler Room (2)", placeholder: "Enter pump number" },
-      { id: "boiler2-primary-circ-pump-status", label: "Primary Circulation Pump Status", type: "on-off", category: "Boiler Room (2)", required: true },
-      { id: "boiler2-primary-circ-discharge-pressure", label: "Primary Circulation Pump - Discharge Pressure", type: "number", category: "Boiler Room (2)", required: true, unit: "PSI" },
-      { id: "boiler2-primary-circ-discharge-temp", label: "Primary Circulation Pump - Discharge Temperature", type: "number", category: "Boiler Room (2)", required: true, unit: "°C" },
-
-      // Domestic Hot Water Low Zone
-      { id: "boiler2-dhw-low-exchanger-pump", label: "DHW Low Zone - Exchanger Circulation Pump", type: "on-off", category: "Boiler Room (2)", required: true },
-      { id: "boiler2-dhw-low-inlet-temp", label: "DHW Low Zone - Inlet Temperature", type: "number", category: "Boiler Room (2)", required: true, unit: "°C" },
-      { id: "boiler2-dhw-low-outlet-temp", label: "DHW Low Zone - Outlet Temperature", type: "number", category: "Boiler Room (2)", required: true, unit: "°C" },
-      { id: "boiler2-dhw-low-recirc-1-num", label: "DHW Low Zone - Recirculation Pump #", type: "text", category: "Boiler Room (2)", placeholder: "Enter pump number" },
-      { id: "boiler2-dhw-low-recirc-1-status", label: "DHW Low Zone - Recirculation Pump #1 Status", type: "on-off", category: "Boiler Room (2)", required: true, defaultValue: true },
-      { id: "boiler2-dhw-low-recirc-2-num", label: "DHW Low Zone - Recirculation Pump #", type: "text", category: "Boiler Room (2)", placeholder: "Enter pump number" },
-      { id: "boiler2-dhw-low-recirc-2-status", label: "DHW Low Zone - Recirculation Pump #2 Status", type: "on-off", category: "Boiler Room (2)", required: true, defaultValue: true },
-
-      // Domestic Hot Water High Zone
-      { id: "boiler2-dhw-high-exchanger-pump", label: "DHW High Zone - Exchanger Circulation Pump", type: "on-off", category: "Boiler Room (2)", required: true },
-      { id: "boiler2-dhw-high-inlet-temp", label: "DHW High Zone - Inlet Temperature", type: "number", category: "Boiler Room (2)", required: true, unit: "°C" },
-      { id: "boiler2-dhw-high-inlet-pressure", label: "DHW High Zone - Inlet Pressure", type: "number", category: "Boiler Room (2)", required: true, unit: "PSI" },
-      { id: "boiler2-dhw-high-outlet-temp", label: "DHW High Zone - Outlet Temperature", type: "number", category: "Boiler Room (2)", required: true, unit: "°C" },
-      { id: "boiler2-dhw-high-outlet-pressure", label: "DHW High Zone - Outlet Pressure", type: "number", category: "Boiler Room (2)", required: true, unit: "PSI" },
-      { id: "boiler2-dhw-high-recirc-pump", label: "DHW High Zone - Recirculation Pump", type: "on-off", category: "Boiler Room (2)", required: true, defaultValue: true },
-
-      // Ramp Heating System
-      { id: "boiler2-ramp-exchanger-pump", label: "Ramp Heating System - Exchanger Circulation Pump", type: "on-off", category: "Boiler Room (2)", required: true },
-      { id: "boiler2-ramp-inlet-temp", label: "Ramp Heating System - Inlet Temperature", type: "number", category: "Boiler Room (2)", required: true, unit: "°C" },
-      { id: "boiler2-ramp-outlet-temp", label: "Ramp Heating System - Outlet Temperature", type: "number", category: "Boiler Room (2)", required: true, unit: "°C" },
-      { id: "boiler2-ramp-glycol-pump", label: "Ramp Heating System - Glycol Circulation Pump", type: "on-off", category: "Boiler Room (2)", required: true },
-      { id: "boiler2-ramp-supply-temp", label: "Ramp Heating System - Supply Temperature", type: "number", category: "Boiler Room (2)", required: true, unit: "°C" },
-      { id: "boiler2-ramp-expansion-level", label: "Ramp Heating System - Expansion Tank Level", type: "text", category: "Boiler Room (2)", required: true, placeholder: "¼ - ¾" },
-      { id: "boiler2-ramp-expansion-pressure", label: "Ramp Heating System - Expansion Tank Pressure", type: "number", category: "Boiler Room (2)", required: true, unit: "PSI" },
-
-      // Boiler System
-      { id: "boiler2-fuel-level", label: "Boiler System - Fuel Level", type: "number", category: "Boiler Room (2)", required: true, unit: "%" },
-      { id: "boiler2-boiler-1-num", label: "Boiler #", type: "text", category: "Boiler Room (2)", placeholder: "Enter boiler number" },
-      { id: "boiler2-boiler-1-status", label: "Boiler #1 Status", type: "on-off", category: "Boiler Room (2)", required: true },
-      { id: "boiler2-boiler-1-pressure", label: "Boiler #1 Pressure", type: "number", category: "Boiler Room (2)", required: true, unit: "PSI" },
-      { id: "boiler2-boiler-2-num", label: "Boiler #", type: "text", category: "Boiler Room (2)", placeholder: "Enter boiler number" },
-      { id: "boiler2-boiler-2-status", label: "Boiler #2 Status", type: "on-off", category: "Boiler Room (2)", required: true },
-      { id: "boiler2-boiler-2-pressure", label: "Boiler #2 Pressure", type: "number", category: "Boiler Room (2)", required: true, unit: "PSI" },
-      { id: "boiler2-supply-header-temp", label: "Supply Header Temperature", type: "number", category: "Boiler Room (2)", required: true, unit: "°C" },
-      { id: "boiler2-return-header-temp", label: "Return Header Temperature", type: "number", category: "Boiler Room (2)", required: true, unit: "°C" },
-
-      // Miscellaneous
-      { id: "misc-test-sump-pumps", label: "Test Sump Pumps (Weekly)", type: "text", category: "Miscellaneous", placeholder: "Enter test notes" },
-
-      // ===== COMMENTS =====
-      { id: "comments", label: "Additional Comments", type: "textarea", category: "Comments", placeholder: "Enter any additional observations or notes..." },
-    ],
+    sections: dailyMaintenanceSections,
+    items: flattenSections(dailyMaintenanceSections),
   },
   {
     id: "building-exterior",
     name: "Building Inspection – Exterior",
     shortName: "Exterior",
-    description: "Weekly review of facade, roof, landscaping, and signage",
+    description: "Weekly assessment of facade, roof, landscaping, signage, and exterior lighting",
     icon: Building2,
-    color: "bg-info",
+    color: "bg-secondary",
     frequency: "weekly",
-    estimatedTime: "25-35 min",
+    estimatedTime: "30-40 min",
+    sections: [],
     items: [
-      { id: "facade-1", label: "Facade condition (cracks, damage)", type: "ok-issue", category: "Facade", required: true },
-      { id: "facade-2", label: "Windows intact", type: "pass-fail", category: "Facade" },
-      { id: "facade-3", label: "Balcony railings secure", type: "pass-fail", category: "Facade", required: true },
-      { id: "roof-1", label: "Roof visible damage", type: "ok-issue", category: "Roof" },
-      { id: "roof-2", label: "Drains clear of debris", type: "pass-fail", category: "Roof", required: true },
-      { id: "roof-3", label: "HVAC units condition", type: "ok-issue", category: "Roof" },
-      { id: "ground-1", label: "Sidewalks condition", type: "ok-issue", category: "Grounds" },
-      { id: "ground-2", label: "Parking lot surface", type: "ok-issue", category: "Grounds" },
-      { id: "ground-3", label: "Exterior lighting", type: "pass-fail", category: "Grounds" },
-      { id: "sign-1", label: "Building signage visible", type: "pass-fail", category: "Signage" },
-      { id: "sign-2", label: "Address numbers visible", type: "pass-fail", category: "Signage" },
-      { id: "notes", label: "Additional observations", type: "textarea", category: "Notes" },
+      { id: "facade-condition", label: "Facade condition - cracks, stains, damage", type: "ok-issue", category: "Facade", required: true },
+      { id: "windows-exterior", label: "Windows - seals, frames, cleanliness", type: "ok-issue", category: "Facade", required: true },
+      { id: "entrance-doors", label: "Entrance doors and hardware", type: "ok-issue", category: "Facade", required: true },
+      { id: "roof-condition", label: "Roof visible condition", type: "ok-issue", category: "Roof", required: true },
+      { id: "gutters-drains", label: "Gutters and drains", type: "ok-issue", category: "Roof", required: true },
+      { id: "landscaping", label: "Landscaping and grounds", type: "ok-issue", category: "Grounds", required: true },
+      { id: "parking-lot", label: "Parking lot condition", type: "ok-issue", category: "Grounds", required: true },
+      { id: "exterior-lighting", label: "Exterior lighting", type: "ok-issue", category: "Lighting", required: true },
+      { id: "signage", label: "Building signage", type: "ok-issue", category: "Signage", required: true },
     ],
   },
   {
     id: "parking-garage",
     name: "Parking & Garage Inspection",
     shortName: "Parking",
-    description: "Weekly check of parking structure, lighting, and access systems",
+    description: "Weekly check of parking facilities, lighting, and security systems",
     icon: Car,
-    color: "bg-secondary-foreground",
+    color: "bg-accent",
     frequency: "weekly",
-    estimatedTime: "20-30 min",
+    estimatedTime: "20-25 min",
+    sections: [],
     items: [
-      { id: "struct-1", label: "Structural integrity", type: "ok-issue", category: "Structure", required: true },
-      { id: "struct-2", label: "Floor/wall cracks", type: "ok-issue", category: "Structure" },
-      { id: "light-1", label: "Lighting levels adequate", type: "pass-fail", category: "Lighting", required: true },
-      { id: "light-2", label: "Emergency lighting", type: "pass-fail", category: "Lighting", required: true },
-      { id: "access-1", label: "Gate/barrier operational", type: "pass-fail", category: "Access", required: true },
-      { id: "access-2", label: "Access card system", type: "pass-fail", category: "Access" },
-      { id: "safety-1", label: "Fire extinguishers present", type: "pass-fail", category: "Safety", required: true },
-      { id: "safety-2", label: "Signage visible", type: "pass-fail", category: "Safety" },
-      { id: "clean-1", label: "Oil stains/spills", type: "ok-issue", category: "Cleanliness" },
-      { id: "clean-2", label: "General cleanliness", type: "ok-issue", category: "Cleanliness" },
-      { id: "notes", label: "Additional observations", type: "textarea", category: "Notes" },
+      { id: "parking-lighting", label: "Parking area lighting", type: "ok-issue", category: "Lighting", required: true },
+      { id: "parking-gates", label: "Gates and barriers", type: "ok-issue", category: "Access", required: true },
+      { id: "parking-lines", label: "Parking lines and signage", type: "ok-issue", category: "Markings", required: true },
+      { id: "parking-drainage", label: "Drainage systems", type: "ok-issue", category: "Drainage", required: true },
+      { id: "parking-security", label: "Security cameras", type: "ok-issue", category: "Security", required: true },
     ],
   },
   {
-    id: "fire-safety",
+    id: "fire-life-safety",
     name: "Fire & Life Safety Inspection",
     shortName: "Fire Safety",
-    description: "Monthly comprehensive fire safety equipment check",
+    description: "Monthly fire safety equipment and emergency systems check",
     icon: Flame,
     color: "bg-destructive",
     frequency: "monthly",
-    estimatedTime: "30-45 min",
+    estimatedTime: "45-60 min",
+    sections: [],
     items: [
-      { id: "alarm-1", label: "Fire alarm panel status", type: "pass-fail", category: "Alarm System", required: true },
-      { id: "alarm-2", label: "Pull stations accessible", type: "pass-fail", category: "Alarm System", required: true },
-      { id: "alarm-3", label: "Smoke detectors functional", type: "pass-fail", category: "Alarm System", required: true },
-      { id: "ext-1", label: "Extinguishers charged", type: "pass-fail", category: "Extinguishers", required: true },
-      { id: "ext-2", label: "Extinguishers accessible", type: "pass-fail", category: "Extinguishers", required: true },
-      { id: "ext-3", label: "Last inspection date current", type: "pass-fail", category: "Extinguishers" },
-      { id: "sprink-1", label: "Sprinkler heads unobstructed", type: "pass-fail", category: "Sprinklers", required: true },
-      { id: "sprink-2", label: "Sprinkler room access", type: "pass-fail", category: "Sprinklers" },
-      { id: "exit-1", label: "Exit signs illuminated", type: "pass-fail", category: "Egress", required: true },
-      { id: "exit-2", label: "Exit paths clear", type: "pass-fail", category: "Egress", required: true },
-      { id: "exit-3", label: "Stairwell doors functional", type: "pass-fail", category: "Egress", required: true },
-      { id: "emerg-1", label: "Emergency lighting", type: "pass-fail", category: "Emergency", required: true },
-      { id: "emerg-2", label: "Evacuation plans posted", type: "pass-fail", category: "Emergency" },
-      { id: "notes", label: "Additional observations", type: "textarea", category: "Notes" },
+      { id: "fire-extinguishers", label: "Fire extinguishers - accessible and charged", type: "pass-fail", category: "Extinguishers", required: true },
+      { id: "fire-alarms", label: "Fire alarm panels - no faults", type: "pass-fail", category: "Alarms", required: true },
+      { id: "emergency-lighting", label: "Emergency lighting", type: "pass-fail", category: "Lighting", required: true },
+      { id: "exit-signs", label: "Exit signs illuminated", type: "pass-fail", category: "Signage", required: true },
+      { id: "sprinkler-system", label: "Sprinkler system valves", type: "open-closed", category: "Sprinklers", required: true },
+      { id: "fire-doors", label: "Fire doors - self-closing", type: "pass-fail", category: "Doors", required: true },
     ],
   },
   {
-    id: "plumbing",
-    name: "Plumbing & Water Systems",
-    shortName: "Plumbing",
-    description: "Monthly inspection of water systems, drains, and fixtures",
-    icon: Droplets,
-    color: "bg-info",
-    frequency: "monthly",
-    estimatedTime: "25-35 min",
-    items: [
-      { id: "water-1", label: "Water pressure adequate", type: "pass-fail", category: "Water Supply", required: true },
-      { id: "water-2", label: "Hot water temperature", type: "number", category: "Water Supply", unit: "°C" },
-      { id: "water-3", label: "No visible leaks", type: "pass-fail", category: "Water Supply", required: true },
-      { id: "drain-1", label: "Floor drains clear", type: "pass-fail", category: "Drainage" },
-      { id: "drain-2", label: "Sump pumps operational", type: "pass-fail", category: "Drainage", required: true },
-      { id: "boiler-1", label: "Boiler room condition", type: "ok-issue", category: "Mechanical" },
-      { id: "boiler-2", label: "Pressure gauges normal", type: "pass-fail", category: "Mechanical" },
-      { id: "common-1", label: "Common area fixtures", type: "ok-issue", category: "Fixtures" },
-      { id: "common-2", label: "Laundry room drains", type: "ok-issue", category: "Fixtures" },
-      { id: "notes", label: "Additional observations", type: "textarea", category: "Notes" },
-    ],
-  },
-  {
-    id: "mechanical-hvac",
-    name: "Mechanical & HVAC Systems",
+    id: "mechanical-systems",
+    name: "Mechanical Systems Inspection",
     shortName: "Mechanical",
-    description: "Monthly check of heating, cooling, and ventilation equipment",
+    description: "Monthly review of HVAC, plumbing, and electrical systems",
     icon: Wrench,
     color: "bg-warning",
     frequency: "monthly",
-    estimatedTime: "30-40 min",
+    estimatedTime: "40-50 min",
+    sections: [],
     items: [
-      { id: "hvac-1", label: "Heating system operational", type: "pass-fail", category: "Heating", required: true },
-      { id: "hvac-2", label: "Boiler/furnace condition", type: "ok-issue", category: "Heating" },
-      { id: "hvac-3", label: "Thermostat calibration", type: "ok-issue", category: "Heating" },
-      { id: "cool-1", label: "Cooling system operational", type: "pass-fail", category: "Cooling", required: true },
-      { id: "cool-2", label: "Condenser units condition", type: "ok-issue", category: "Cooling" },
-      { id: "vent-1", label: "Ventilation fans working", type: "pass-fail", category: "Ventilation", required: true },
-      { id: "vent-2", label: "Air filters condition", type: "ok-issue", category: "Ventilation" },
-      { id: "vent-3", label: "Ductwork visible damage", type: "ok-issue", category: "Ventilation" },
-      { id: "elec-1", label: "Electrical panels accessible", type: "pass-fail", category: "Electrical", required: true },
-      { id: "elec-2", label: "No unusual sounds/smells", type: "pass-fail", category: "Electrical" },
-      { id: "notes", label: "Additional observations", type: "textarea", category: "Notes" },
+      { id: "hvac-filters", label: "HVAC filters condition", type: "ok-issue", category: "HVAC", required: true },
+      { id: "hvac-operation", label: "HVAC operation and temperature", type: "ok-issue", category: "HVAC", required: true },
+      { id: "plumbing-leaks", label: "Check for plumbing leaks", type: "ok-issue", category: "Plumbing", required: true },
+      { id: "water-heater", label: "Water heater operation", type: "ok-issue", category: "Plumbing", required: true },
+      { id: "electrical-panels", label: "Electrical panels - no issues", type: "pass-fail", category: "Electrical", required: true },
+    ],
+  },
+  {
+    id: "pool-recreation",
+    name: "Pool & Recreation Center",
+    shortName: "Recreation",
+    description: "Weekly inspection of pool, gym, and recreational facilities",
+    icon: Droplets,
+    color: "bg-info",
+    frequency: "weekly",
+    estimatedTime: "25-30 min",
+    sections: [],
+    items: [
+      { id: "pool-chemistry", label: "Pool water chemistry", type: "pass-fail", category: "Pool", required: true },
+      { id: "pool-equipment", label: "Pool equipment operation", type: "ok-issue", category: "Pool", required: true },
+      { id: "gym-equipment", label: "Gym equipment condition", type: "ok-issue", category: "Gym", required: true },
+      { id: "locker-rooms", label: "Locker rooms cleanliness", type: "ok-issue", category: "Facilities", required: true },
     ],
   },
   {
     id: "landscaping",
     name: "Landscaping & Grounds",
     shortName: "Landscaping",
-    description: "Weekly assessment of lawns, gardens, and outdoor amenities",
+    description: "Weekly outdoor areas and landscaping assessment",
     icon: TreePine,
     color: "bg-success",
     frequency: "weekly",
     estimatedTime: "20-25 min",
+    sections: [],
     items: [
-      { id: "lawn-1", label: "Lawn condition", type: "ok-issue", category: "Lawns" },
-      { id: "lawn-2", label: "Irrigation system", type: "pass-fail", category: "Lawns" },
-      { id: "plant-1", label: "Shrubs/hedges trimmed", type: "ok-issue", category: "Plants" },
-      { id: "plant-2", label: "Flower beds maintained", type: "ok-issue", category: "Plants" },
-      { id: "tree-1", label: "Trees healthy/trimmed", type: "ok-issue", category: "Trees" },
-      { id: "tree-2", label: "No hazardous branches", type: "pass-fail", category: "Trees", required: true },
-      { id: "path-1", label: "Walkways clear", type: "pass-fail", category: "Pathways", required: true },
-      { id: "path-2", label: "Outdoor lighting", type: "pass-fail", category: "Pathways" },
-      { id: "furn-1", label: "Outdoor furniture condition", type: "ok-issue", category: "Amenities" },
-      { id: "furn-2", label: "BBQ/grill areas", type: "ok-issue", category: "Amenities" },
-      { id: "notes", label: "Additional observations", type: "textarea", category: "Notes" },
+      { id: "lawn-condition", label: "Lawn condition", type: "ok-issue", category: "Lawn", required: true },
+      { id: "irrigation", label: "Irrigation system", type: "ok-issue", category: "Irrigation", required: true },
+      { id: "trees-shrubs", label: "Trees and shrubs", type: "ok-issue", category: "Plants", required: true },
+      { id: "walkways", label: "Walkways and pathways", type: "ok-issue", category: "Paths", required: true },
     ],
   },
   {
-    id: "recreation",
-    name: "Recreation Center Inspection",
-    shortName: "Recreation",
-    description: "Weekly check of gym, pool, and recreational facilities",
+    id: "gym-fitness",
+    name: "Gym & Fitness Inspection",
+    shortName: "Gym",
+    description: "Weekly fitness equipment and facility check",
     icon: Dumbbell,
-    color: "bg-accent",
+    color: "bg-purple-600",
     frequency: "weekly",
-    estimatedTime: "25-35 min",
+    estimatedTime: "15-20 min",
+    sections: [],
     items: [
-      { id: "gym-1", label: "Gym equipment functional", type: "ok-issue", category: "Gym", required: true },
-      { id: "gym-2", label: "Equipment sanitized", type: "pass-fail", category: "Gym" },
-      { id: "gym-3", label: "Mirrors/TV screens", type: "ok-issue", category: "Gym" },
-      { id: "pool-1", label: "Pool water clarity", type: "ok-issue", category: "Pool" },
-      { id: "pool-2", label: "pH level normal", type: "pass-fail", category: "Pool" },
-      { id: "pool-3", label: "Pool deck clean/safe", type: "pass-fail", category: "Pool", required: true },
-      { id: "sauna-1", label: "Sauna/steam room", type: "ok-issue", category: "Spa" },
-      { id: "change-1", label: "Change room cleanliness", type: "ok-issue", category: "Facilities" },
-      { id: "change-2", label: "Showers/lockers", type: "ok-issue", category: "Facilities" },
-      { id: "safety-1", label: "First aid kit stocked", type: "pass-fail", category: "Safety", required: true },
-      { id: "safety-2", label: "Emergency procedures posted", type: "pass-fail", category: "Safety" },
-      { id: "notes", label: "Additional observations", type: "textarea", category: "Notes" },
+      { id: "cardio-equipment", label: "Cardio machines", type: "ok-issue", category: "Equipment", required: true },
+      { id: "weight-equipment", label: "Weight machines and free weights", type: "ok-issue", category: "Equipment", required: true },
+      { id: "gym-cleanliness", label: "Gym floor cleanliness", type: "ok-issue", category: "Cleanliness", required: true },
+      { id: "gym-ventilation", label: "Ventilation and air quality", type: "ok-issue", category: "Environment", required: true },
     ],
   },
   {
     id: "deficiency-report",
     name: "Deficiency Report",
     shortName: "Deficiency",
-    description: "Document and track issues requiring follow-up or contractor work",
+    description: "Document and track maintenance issues and repairs needed",
     icon: AlertTriangle,
-    color: "bg-warning",
+    color: "bg-orange-500",
     frequency: "daily",
     estimatedTime: "10-15 min",
+    sections: [],
     items: [
-      { id: "location", label: "Location of deficiency", type: "text", category: "Details", required: true },
-      { id: "description", label: "Description of issue", type: "textarea", category: "Details", required: true },
-      { id: "severity", label: "Severity level (1-5)", type: "number", category: "Assessment", required: true },
-      { id: "safety", label: "Safety hazard present", type: "pass-fail", category: "Assessment", required: true },
-      { id: "urgent", label: "Requires immediate attention", type: "pass-fail", category: "Assessment" },
-      { id: "contractor", label: "Contractor required", type: "pass-fail", category: "Action" },
-      { id: "estimated-cost", label: "Estimated repair cost", type: "number", category: "Action", unit: "$" },
-      { id: "timeline", label: "Suggested repair timeline", type: "text", category: "Action" },
-      { id: "notes", label: "Additional notes", type: "textarea", category: "Notes" },
+      { id: "deficiency-location", label: "Location of issue", type: "text", category: "Details", required: true, placeholder: "e.g., Unit 302, Lobby, Parking P2" },
+      { id: "deficiency-description", label: "Description of deficiency", type: "textarea", category: "Details", required: true, placeholder: "Describe the issue in detail..." },
+      { id: "deficiency-priority", label: "Priority level assessment", type: "pass-fail", category: "Priority", required: true },
+      { id: "deficiency-action", label: "Recommended action", type: "textarea", category: "Action", required: false, placeholder: "What needs to be done to fix this?" },
     ],
   },
 ];
@@ -388,6 +419,7 @@ export const getFormTemplate = (id: string): FormTemplate | undefined => {
   return formTemplates.find((template) => template.id === id);
 };
 
-export const getFormsByFrequency = (frequency: "daily" | "weekly" | "monthly") => {
+export const getFormsByFrequency = (frequency: "daily" | "weekly" | "monthly" | "all"): FormTemplate[] => {
+  if (frequency === "all") return formTemplates;
   return formTemplates.filter((template) => template.frequency === frequency);
 };
