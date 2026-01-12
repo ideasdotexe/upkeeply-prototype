@@ -2,6 +2,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CheckCircle, XCircle, AlertCircle, Minus, Power, PowerOff, Lock, Unlock, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChecklistItem as ChecklistItemType } from "@/lib/formTemplates";
@@ -119,16 +126,20 @@ export function ChecklistItem({
                 {item.identifierLabel || "#"}
               </span>
               <Input
-                type="text"
+                type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={combinedValue.identifier || ""}
-                onChange={(e) =>
+                onChange={(e) => {
+                  // Only allow numbers
+                  const numValue = e.target.value.replace(/[^0-9]/g, "");
                   onChange({
                     ...combinedValue,
-                    identifier: e.target.value || undefined,
-                  })
-                }
+                    identifier: numValue || undefined,
+                  });
+                }}
                 className="w-20 h-8 text-sm"
-                placeholder={item.placeholder || "#"}
+                placeholder="#"
               />
             </div>
             {renderToggleButtons(
@@ -139,6 +150,25 @@ export function ChecklistItem({
           </div>
         );
       }
+
+      case "select":
+        return (
+          <Select
+            value={value as string || ""}
+            onValueChange={(val) => onChange(val || null)}
+          >
+            <SelectTrigger className="w-24 h-8 text-sm">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              {item.selectOptions?.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
 
       case "pass-fail":
         return renderToggleButtons(value as boolean | null, (val) => onChange(val), "pass-fail");
@@ -184,7 +214,7 @@ export function ChecklistItem({
           <Textarea
             value={value as string ?? ""}
             onChange={(e) => onChange(e.target.value || null)}
-            className="min-h-[80px] resize-none text-sm"
+            className="min-h-[80px] resize-none text-sm w-full"
             placeholder={item.placeholder || "Enter details..."}
           />
         );
@@ -197,6 +227,34 @@ export function ChecklistItem({
   const hasIssue = 
     (item.type === "combined-toggle" && (value as CombinedValue)?.status === false) ||
     (value === false && (item.type === "pass-fail" || item.type === "ok-issue" || item.type === "open-closed"));
+
+  // For textarea without label, render full-width
+  if (item.type === "textarea" && !item.label) {
+    return (
+      <div className={cn(
+        "rounded-md border px-3 py-2.5 transition-all",
+        hasIssue ? "border-warning/50 bg-warning/5" : "border-border/50 bg-card/50"
+      )}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            {renderInput()}
+          </div>
+          {canRemove && onRemove && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive shrink-0"
+              onClick={onRemove}
+              title="Remove item"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
