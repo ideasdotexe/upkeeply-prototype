@@ -29,6 +29,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { 
   ArrowLeft, 
   Download, 
@@ -38,9 +51,11 @@ import {
   AlertCircle,
   Building2,
   Plus,
-  ChevronDown
+  ChevronDown,
+  Check,
+  ChevronsUpDown
 } from "lucide-react";
-import { getFormTemplate, FormSection, ChecklistItem as ChecklistItemType, ChecklistItemType as ItemType } from "@/lib/formTemplates";
+import { getFormTemplate, FormSection, ChecklistItem as ChecklistItemType, ChecklistItemType as ItemType, itemTemplateLibrary, ItemTemplate } from "@/lib/formTemplates";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -59,6 +74,11 @@ interface CustomSection extends FormSection {
   items: CustomItem[];
 }
 
+// Track removed template items
+interface RemovedItems {
+  [sectionId: string]: Set<string>;
+}
+
 export default function FormPage() {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
@@ -67,6 +87,7 @@ export default function FormPage() {
   const [responses, setResponses] = useState<FormResponse>({});
   const [isSaving, setIsSaving] = useState(false);
   const [customSections, setCustomSections] = useState<CustomSection[]>([]);
+  const [removedItems, setRemovedItems] = useState<RemovedItems>({});
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   
   // Add item dialog state
@@ -74,8 +95,11 @@ export default function FormPage() {
   const [newItemLabel, setNewItemLabel] = useState("");
   const [newItemType, setNewItemType] = useState<ItemType>("ok-issue");
   const [newItemSection, setNewItemSection] = useState("");
+  const [newItemUnit, setNewItemUnit] = useState("");
+  const [templateSearchOpen, setTemplateSearchOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<ItemTemplate | null>(null);
 
-  // Merge template sections with custom sections
+  // Merge template sections with custom sections and filter removed items
   const allSections = useMemo(() => {
     if (!template) return [];
     
@@ -83,12 +107,18 @@ export default function FormPage() {
       ? template.sections 
       : [{ id: "general", title: "General", items: template.items }];
     
-    // Merge custom items into existing sections or add new sections
-    const merged: CustomSection[] = templateSections.map(section => ({
-      ...section,
-      items: section.items.map(item => ({ ...item, isCustom: false })),
-    }));
+    // Merge and filter removed items
+    const merged: CustomSection[] = templateSections.map(section => {
+      const removedInSection = removedItems[section.id] || new Set();
+      return {
+        ...section,
+        items: section.items
+          .filter(item => !removedInSection.has(item.id))
+          .map(item => ({ ...item, isCustom: false })),
+      };
+    });
     
+    // Add custom items to their sections
     customSections.forEach(customSection => {
       const existingIndex = merged.findIndex(s => s.id === customSection.id);
       if (existingIndex >= 0) {
@@ -98,8 +128,9 @@ export default function FormPage() {
       }
     });
     
-    return merged;
-  }, [template, customSections]);
+    // Filter out empty sections
+    return merged.filter(section => section.items.length > 0);
+  }, [template, customSections, removedItems]);
 
   // Get all items for counting
   const allItems = useMemo(() => {
@@ -148,18 +179,28 @@ export default function FormPage() {
     }));
   }, []);
 
-  const handleRemoveItem = useCallback((sectionId: string, itemId: string) => {
-    setCustomSections(prev => 
-      prev.map(section => {
-        if (section.id === sectionId) {
-          return {
-            ...section,
-            items: section.items.filter(item => item.id !== itemId),
-          };
-        }
-        return section;
-      }).filter(section => section.items.length > 0)
-    );
+  const handleRemoveItem = useCallback((sectionId: string, itemId: string, isCustom: boolean) => {
+    if (isCustom) {
+      // Remove custom item
+      setCustomSections(prev => 
+        prev.map(section => {
+          if (section.id === sectionId) {
+            return {
+              ...section,
+              items: section.items.filter(item => item.id !== itemId),
+            };
+          }
+          return section;
+        }).filter(section => section.items.length > 0)
+      );
+    } else {
+      // Mark template item as removed
+      setRemovedItems(prev => {
+        const sectionRemoved = new Set(prev[sectionId] || []);
+        sectionRemoved.add(itemId);
+        return { ...prev, [sectionId]: sectionRemoved };
+      });
+    }
     
     // Remove response for this item
     setResponses(prev => {
@@ -171,13 +212,40 @@ export default function FormPage() {
     toast.success("Item removed");
   }, []);
 
+  // Handle template selection
+  const handleTemplateSelect = useCallback((tmpl: ItemTemplate) => {
+    setSelectedTemplate(tmpl);
+    setNewItemLabel(tmpl.label);
+    setNewItemType(tmpl.type);
+    setNewItemUnit(tmpl.unit || "");
+    setTemplateSearchOpen(false);
+  }, []);
+
+  // Handle custom label input
+  const handleLabelChange = useCallback((label: string) => {
+    setNewItemLabel(label);
+    
+    // Find matching template for auto-type selection
+    const matchingTemplate = itemTemplateLibrary.find(
+      t => t.label.toLowerCase() === label.toLowerCase()
+    );
+    
+    if (matchingTemplate) {
+      setSelectedTemplate(matchingTemplate);
+      setNewItemType(matchingTemplate.type);
+      setNewItemUnit(matchingTemplate.unit || "");
+    } else {
+      setSelectedTemplate(null);
+    }
+  }, []);
+
   const handleAddItem = useCallback(() => {
     if (!newItemLabel.trim() || !newItemSection) {
       toast.error("Please fill in all fields");
       return;
     }
 
-    const newItem: CustomItem = {
+    const baseItem: CustomItem = {
       id: `custom-${Date.now()}`,
       label: newItemLabel.trim(),
       type: newItemType,
@@ -185,31 +253,44 @@ export default function FormPage() {
       isCustom: true,
     };
 
+    // Add properties based on selected template or type
+    if (selectedTemplate) {
+      if (selectedTemplate.unit) baseItem.unit = selectedTemplate.unit;
+      if (selectedTemplate.toggleType) baseItem.toggleType = selectedTemplate.toggleType;
+      if (selectedTemplate.identifierLabel) baseItem.identifierLabel = selectedTemplate.identifierLabel;
+      if (selectedTemplate.selectOptions) baseItem.selectOptions = selectedTemplate.selectOptions;
+    } else if (newItemUnit && newItemType === "number") {
+      baseItem.unit = newItemUnit;
+    }
+
     setCustomSections(prev => {
       const existingSection = prev.find(s => s.id === newItemSection);
       if (existingSection) {
         return prev.map(s => 
           s.id === newItemSection 
-            ? { ...s, items: [...s.items, newItem] }
+            ? { ...s, items: [...s.items, baseItem] }
             : s
         );
       }
       
-      // Find section title from template
-      const templateSection = allSections.find(s => s.id === newItemSection);
+      // Find section title from allSections or template
+      const templateSection = template?.sections.find(s => s.id === newItemSection);
       return [...prev, {
         id: newItemSection,
         title: templateSection?.title || newItemSection,
-        items: [newItem],
+        items: [baseItem],
       }];
     });
 
+    // Reset form
     setNewItemLabel("");
     setNewItemType("ok-issue");
     setNewItemSection("");
+    setNewItemUnit("");
+    setSelectedTemplate(null);
     setAddItemDialogOpen(false);
     toast.success("Item added");
-  }, [newItemLabel, newItemType, newItemSection, allSections]);
+  }, [newItemLabel, newItemType, newItemSection, newItemUnit, selectedTemplate, template]);
 
   const handleSaveDraft = async () => {
     setIsSaving(true);
@@ -243,6 +324,14 @@ export default function FormPage() {
     toast.success("Inspection submitted successfully!");
     navigate("/");
   };
+
+  // Get all possible sections for Add Item dialog
+  const allAvailableSections = useMemo(() => {
+    if (!template) return [];
+    return template.sections.length > 0 
+      ? template.sections 
+      : [{ id: "general", title: "General", items: [] }];
+  }, [template]);
 
   if (!template) {
     return (
@@ -327,9 +416,9 @@ export default function FormPage() {
                     Add Item
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Add Custom Item</DialogTitle>
+                    <DialogTitle>Add Item</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
@@ -339,7 +428,7 @@ export default function FormPage() {
                           <SelectValue placeholder="Select section" />
                         </SelectTrigger>
                         <SelectContent>
-                          {allSections.map(section => (
+                          {allAvailableSections.map(section => (
                             <SelectItem key={section.id} value={section.id}>
                               {section.title}
                             </SelectItem>
@@ -347,17 +436,79 @@ export default function FormPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                    
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Item Label</label>
-                      <Input
-                        value={newItemLabel}
-                        onChange={(e) => setNewItemLabel(e.target.value)}
-                        placeholder="e.g., Check water pressure"
-                      />
+                      <Popover open={templateSearchOpen} onOpenChange={setTemplateSearchOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={templateSearchOpen}
+                            className="w-full justify-between font-normal"
+                          >
+                            {newItemLabel || "Select from library or type custom..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput 
+                              placeholder="Search templates or type custom..." 
+                              value={newItemLabel}
+                              onValueChange={handleLabelChange}
+                            />
+                            <CommandList>
+                              <CommandEmpty>
+                                <div className="py-2 px-3 text-sm">
+                                  No template found. Using "{newItemLabel}" as custom item.
+                                </div>
+                              </CommandEmpty>
+                              <CommandGroup heading="Templates">
+                                {itemTemplateLibrary.map((tmpl) => (
+                                  <CommandItem
+                                    key={tmpl.label}
+                                    value={tmpl.label}
+                                    onSelect={() => handleTemplateSelect(tmpl)}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedTemplate?.label === tmpl.label
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                      <span>{tmpl.label}</span>
+                                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                        {tmpl.type}
+                                      </Badge>
+                                      {tmpl.unit && (
+                                        <span className="text-xs text-muted-foreground">({tmpl.unit})</span>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      {newItemLabel && !selectedTemplate && (
+                        <p className="text-xs text-muted-foreground">
+                          Custom item - select type below
+                        </p>
+                      )}
                     </div>
+                    
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Type</label>
-                      <Select value={newItemType} onValueChange={(v) => setNewItemType(v as ItemType)}>
+                      <Select 
+                        value={newItemType} 
+                        onValueChange={(v) => setNewItemType(v as ItemType)}
+                        disabled={!!selectedTemplate}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -368,9 +519,26 @@ export default function FormPage() {
                           <SelectItem value="open-closed">OPEN / CLOSED</SelectItem>
                           <SelectItem value="number">Number</SelectItem>
                           <SelectItem value="text">Text</SelectItem>
+                          <SelectItem value="select">Dropdown</SelectItem>
                         </SelectContent>
                       </Select>
+                      {selectedTemplate && (
+                        <p className="text-xs text-muted-foreground">
+                          Type auto-selected from template
+                        </p>
+                      )}
                     </div>
+
+                    {newItemType === "number" && !selectedTemplate && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Unit (optional)</label>
+                        <Input
+                          value={newItemUnit}
+                          onChange={(e) => setNewItemUnit(e.target.value)}
+                          placeholder="e.g., PSI, °C, %"
+                        />
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <DialogClose asChild>
@@ -442,8 +610,8 @@ export default function FormPage() {
                             onChange={(value) => handleValueChange(item.id, value)}
                             note={responses[item.id]?.note}
                             onNoteChange={(note) => handleNoteChange(item.id, note)}
-                            canRemove={item.isCustom}
-                            onRemove={() => handleRemoveItem(section.id, item.id)}
+                            canRemove={true}
+                            onRemove={() => handleRemoveItem(section.id, item.id, !!item.isCustom)}
                           />
                         ))}
                       </div>

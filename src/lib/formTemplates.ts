@@ -18,7 +18,8 @@ export type ChecklistItemType =
   | "text" 
   | "textarea" 
   | "number"
-  | "combined-toggle"; // Combined: text identifier + toggle status in one row
+  | "select"
+  | "combined-toggle"; // Combined: number identifier + toggle status in one row
 
 export interface ChecklistItem {
   id: string;
@@ -30,10 +31,84 @@ export interface ChecklistItem {
   placeholder?: string;
   defaultValue?: string | boolean;
   options?: [string, string];
+  selectOptions?: string[]; // For select type
   // For combined-toggle type
   toggleType?: "on-off" | "open-closed";
   identifierLabel?: string; // e.g., "Fan #", "Pump #"
 }
+
+// Item templates library for quick add
+export interface ItemTemplate {
+  label: string;
+  type: ChecklistItemType;
+  unit?: string;
+  toggleType?: "on-off" | "open-closed";
+  identifierLabel?: string;
+  selectOptions?: string[];
+}
+
+export const itemTemplateLibrary: ItemTemplate[] = [
+  // Toggle items
+  { label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #" },
+  { label: "Supply Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #" },
+  { label: "Circulation Pump", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Pump #" },
+  { label: "Recirculation Pump", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Pump #" },
+  { label: "DCW Booster Pump", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Pump #" },
+  { label: "Boiler", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Boiler #" },
+  { label: "PRV", type: "combined-toggle", toggleType: "on-off", identifierLabel: "PRV #" },
+  { label: "Controller", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Controller #" },
+  
+  // Simple toggles
+  { label: "Exchanger Circulation Pump", type: "on-off" },
+  { label: "Glycol Circulation Pump", type: "on-off" },
+  { label: "Sprinkler Valves", type: "open-closed" },
+  
+  // OK/Issue items
+  { label: "Residential parking", type: "ok-issue" },
+  { label: "Visitors parking", type: "ok-issue" },
+  { label: "Building exterior", type: "ok-issue" },
+  { label: "Test Sump Pumps (Weekly)", type: "ok-issue" },
+  
+  // Number items with units
+  { label: "Fire Hose Cabinet Pressure", type: "number", unit: "PSI" },
+  { label: "Fire Pump Discharge Pressure", type: "number", unit: "PSI" },
+  { label: "Controller Air Pressure", type: "number", unit: "PSI" },
+  { label: "Discharge Pressure", type: "number", unit: "PSI" },
+  { label: "Suction Pressure", type: "number", unit: "PSI" },
+  { label: "Differential Air Pressure", type: "number", unit: "PSI" },
+  { label: "PRV Air Pressure", type: "number", unit: "PSI" },
+  { label: "Bypass PRV Air Pressure", type: "number", unit: "PSI" },
+  { label: "Make Up PRV Pressure", type: "number", unit: "PSI" },
+  { label: "Air Compressor Tank Air Pressure", type: "number", unit: "PSI" },
+  { label: "Inlet Pressure", type: "number", unit: "PSI" },
+  { label: "Outlet Pressure", type: "number", unit: "PSI" },
+  { label: "Expansion Tank Pressure", type: "number", unit: "PSI" },
+  
+  // Temperature items
+  { label: "Intake Air Temperature", type: "number", unit: "°C" },
+  { label: "Supply Air Temperature", type: "number", unit: "°C" },
+  { label: "Supply Water Temperature", type: "number", unit: "°C" },
+  { label: "Return Water Temperature", type: "number", unit: "°C" },
+  { label: "Outdoor Air Temperature", type: "number", unit: "°C" },
+  { label: "Design Temperature", type: "number", unit: "°C" },
+  { label: "Supply Temperature", type: "number", unit: "°C" },
+  { label: "Return Temperature", type: "number", unit: "°C" },
+  { label: "Suction Temperature", type: "number", unit: "°C" },
+  { label: "Discharge Temperature", type: "number", unit: "°C" },
+  { label: "Inlet Temperature", type: "number", unit: "°C" },
+  { label: "Outlet Temperature", type: "number", unit: "°C" },
+  { label: "Supply Header Temperature", type: "number", unit: "°C" },
+  { label: "Return Header Temperature", type: "number", unit: "°C" },
+  
+  // Other number items
+  { label: "Water Meter Reading", type: "number" },
+  { label: "Fuel Level", type: "number", unit: "%" },
+  { label: "Pressure", type: "number", unit: "PSI" },
+  
+  // Select items
+  { label: "Evaporation Tank Level", type: "select", selectOptions: ["1/4", "2/4", "3/4"] },
+  { label: "Expansion Tank Level", type: "select", selectOptions: ["1/4", "2/4", "3/4"] },
+];
 
 export interface FormSection {
   id: string;
@@ -79,9 +154,9 @@ const dailyMaintenanceSections: FormSection[] = [
     id: "elevator-mechanical",
     title: "Elevator / Mechanical Room",
     items: [
-      { id: "elev-exhaust-fan", label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", placeholder: "Enter #", required: true, defaultValue: true },
-      { id: "elev-evap-tank-1", label: "Evaporation Tank Level", type: "text", placeholder: "¼ - ¾", required: true },
-      { id: "elev-evap-tank-2", label: "Evaporation Tank Level", type: "text", placeholder: "¼ - ¾", required: true },
+      { id: "elev-exhaust-fan", label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", required: true, defaultValue: true },
+      { id: "elev-evap-tank-1", label: "Evaporation Tank Level", type: "select", selectOptions: ["1/4", "2/4", "3/4"], required: true },
+      { id: "elev-evap-tank-2", label: "Evaporation Tank Level", type: "select", selectOptions: ["1/4", "2/4", "3/4"], required: true },
       { id: "elev-fire-hose-pressure", label: "Fire Hose Cabinet Pressure", type: "number", required: true, unit: "PSI" },
     ]
   },
@@ -215,7 +290,7 @@ const dailyMaintenanceSections: FormSection[] = [
       { id: "ramp-outlet-temp", label: "Outlet Temperature", type: "number", unit: "°C", required: true },
       { id: "ramp-glycol-pump", label: "Glycol Circulation Pump", type: "on-off", required: true },
       { id: "ramp-supply-temp", label: "Supply Temperature", type: "number", unit: "°C", required: true },
-      { id: "ramp-expansion-level", label: "Expansion Tank Level", type: "text", placeholder: "¼ - ¾", required: true },
+      { id: "ramp-expansion-level", label: "Expansion Tank Level", type: "select", selectOptions: ["1/4", "2/4", "3/4"], required: true },
       { id: "ramp-expansion-pressure", label: "Expansion Tank Pressure", type: "number", unit: "PSI", required: true },
     ]
   },
@@ -243,7 +318,7 @@ const dailyMaintenanceSections: FormSection[] = [
     id: "comments",
     title: "Comments",
     items: [
-      { id: "comments", label: "Additional Comments", type: "textarea", placeholder: "Enter any additional observations or notes...", required: false },
+      { id: "comments", label: "", type: "textarea", placeholder: "Enter any additional observations or notes...", required: false },
     ]
   },
 ];

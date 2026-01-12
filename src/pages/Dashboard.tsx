@@ -9,9 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { 
   ClipboardCheck, 
-  Clock, 
+  Clock,
   AlertTriangle, 
-  TrendingUp,
   Calendar,
   Building2
 } from "lucide-react";
@@ -61,7 +60,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <StatsCard
             title="Inspections This Week"
             value="12"
@@ -70,24 +69,10 @@ export default function Dashboard() {
             trend={{ value: 15, label: "vs last week" }}
           />
           <StatsCard
-            title="Avg. Completion Time"
-            value="14 min"
-            subtitle="Target: 15 min"
-            icon={Clock}
-            trend={{ value: -8, label: "faster" }}
-          />
-          <StatsCard
             title="Open Issues"
             value="3"
             subtitle="2 require contractor"
             icon={AlertTriangle}
-          />
-          <StatsCard
-            title="Compliance Score"
-            value="94%"
-            subtitle="All forms up to date"
-            icon={TrendingUp}
-            trend={{ value: 2, label: "this month" }}
           />
         </div>
 
