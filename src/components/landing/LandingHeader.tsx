@@ -9,7 +9,7 @@ const LandingHeader = () => {
           Upkeeply
         </Link>
         <Button variant="outline" asChild>
-          <Link to="/form/daily-maintenance">Login</Link>
+          <Link to="/login">Login</Link>
         </Button>
       </div>
     </header>
