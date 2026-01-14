@@ -3,15 +3,19 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   CalendarDays, 
   ClipboardCheck, 
   AlertTriangle,
-  Clock
+  Clock,
+  Download
 } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { getInspections, CompletedInspection } from "@/lib/inspectionsStore";
 import { cn } from "@/lib/utils";
+import { generateInspectionPDF } from "@/lib/pdfGenerator";
+import { toast } from "@/hooks/use-toast";
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -168,8 +172,36 @@ export default function CalendarPage() {
 }
 
 function InspectionCard({ inspection }: { inspection: CompletedInspection }) {
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Only allow download for daily-maintenance form for now
+    if (inspection.formId !== "daily-maintenance") {
+      toast({
+        title: "PDF not available",
+        description: "PDF export is currently only available for Daily Maintenance forms.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      generateInspectionPDF(inspection);
+      toast({
+        title: "PDF Downloaded",
+        description: `${inspection.formName} inspection report has been downloaded.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
   return (
-    <div className="p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow cursor-pointer">
+    <div className="p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="font-medium text-sm">{inspection.formName}</p>
@@ -195,6 +227,15 @@ function InspectionCard({ inspection }: { inspection: CompletedInspection }) {
           </span>
         </div>
       </div>
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full mt-3 gap-2"
+        onClick={handleDownload}
+      >
+        <Download className="h-4 w-4" />
+        Download PDF
+      </Button>
     </div>
   );
 }
