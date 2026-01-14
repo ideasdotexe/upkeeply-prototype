@@ -12,11 +12,12 @@ interface StatsCardProps {
     label: string;
   };
   className?: string;
+  onClick?: () => void;
 }
 
-export function StatsCard({ title, value, subtitle, icon: Icon, trend, className }: StatsCardProps) {
+export function StatsCard({ title, value, subtitle, icon: Icon, trend, className, onClick }: StatsCardProps) {
   return (
-    <Card className={cn("border-border/50", className)}>
+    <Card className={cn("border-border/50", className)} onClick={onClick}>
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="space-y-1">

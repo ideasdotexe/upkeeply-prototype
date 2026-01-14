@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/Header";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { FormCard } from "@/components/FormCard";
 import { StatsCard } from "@/components/StatsCard";
 import { RecentInspection } from "@/components/RecentInspection";
@@ -15,6 +15,7 @@ import {
   Building2
 } from "lucide-react";
 import { formTemplates, getFormsByFrequency } from "@/lib/formTemplates";
+import { getOpenIssuesCount } from "@/lib/issuesStore";
 
 const recentInspections = [
   { formName: "Daily Maintenance", date: "Today, 8:30 AM", status: "completed" as const, itemsCount: 15 },
@@ -27,6 +28,11 @@ const recentInspections = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
+  const [openIssuesCount, setOpenIssuesCount] = useState(0);
+
+  useEffect(() => {
+    setOpenIssuesCount(getOpenIssuesCount());
+  }, []);
 
   const dailyForms = getFormsByFrequency("daily");
   const weeklyForms = getFormsByFrequency("weekly");
@@ -41,10 +47,8 @@ export default function Dashboard() {
         : monthlyForms;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main className="container py-6 space-y-6">
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
         {/* Welcome Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -70,9 +74,11 @@ export default function Dashboard() {
           />
           <StatsCard
             title="Open Issues"
-            value="3"
+            value={openIssuesCount.toString()}
             subtitle="2 require contractor"
             icon={AlertTriangle}
+            onClick={() => navigate("/issues")}
+            className="cursor-pointer hover:shadow-card-hover transition-shadow"
           />
         </div>
 
@@ -152,7 +158,12 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Recent Inspections</CardTitle>
-                  <a href="#" className="text-xs text-primary hover:underline">View all</a>
+                  <button 
+                    onClick={() => navigate("/calendar")}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    View all
+                  </button>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
@@ -185,7 +196,7 @@ export default function Dashboard() {
             </Card>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
