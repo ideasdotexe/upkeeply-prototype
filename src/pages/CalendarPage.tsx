@@ -9,9 +9,10 @@ import {
   ClipboardCheck, 
   AlertTriangle,
   Clock,
-  Download
+  Download,
+  FileDown
 } from "lucide-react";
-import { format, isSameDay } from "date-fns";
+import { format, isSameDay, isSameMonth } from "date-fns";
 import { getInspections, CompletedInspection } from "@/lib/inspectionsStore";
 import { cn } from "@/lib/utils";
 import { generateInspectionPDF } from "@/lib/pdfGenerator";
@@ -19,6 +20,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const inspections = getInspections();
 
   // Get unique dates that have inspections
@@ -28,6 +30,43 @@ export default function CalendarPage() {
   const selectedDateInspections = selectedDate 
     ? inspections.filter(i => isSameDay(new Date(i.completedAt), selectedDate))
     : [];
+
+  // Get inspections for current month
+  const monthInspections = inspections.filter(i => 
+    isSameMonth(new Date(i.completedAt), currentMonth)
+  );
+
+  // Download all forms for the selected month
+  const handleDownloadAllMonth = () => {
+    const dailyMaintenanceInspections = monthInspections.filter(
+      i => i.formId === "daily-maintenance"
+    );
+
+    if (dailyMaintenanceInspections.length === 0) {
+      toast({
+        title: "No forms to download",
+        description: `No Daily Maintenance forms found for ${format(currentMonth, "MMMM yyyy")}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      dailyMaintenanceInspections.forEach(inspection => {
+        generateInspectionPDF(inspection);
+      });
+      toast({
+        title: "PDFs Downloaded",
+        description: `${dailyMaintenanceInspections.length} Daily Maintenance form(s) for ${format(currentMonth, "MMMM yyyy")} downloaded.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: "Failed to generate PDFs. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Custom day content to show indicators
   const modifiers = {
@@ -47,11 +86,21 @@ export default function CalendarPage() {
     <DashboardLayout>
       <div className="p-6 space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Inspection Calendar</h1>
-          <p className="text-muted-foreground mt-1">
-            View and access all completed inspection forms by date
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Inspection Calendar</h1>
+            <p className="text-muted-foreground mt-1">
+              View and access all completed inspection forms by date
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={handleDownloadAllMonth}
+          >
+            <FileDown className="h-4 w-4" />
+            Download {format(currentMonth, "MMMM")} Forms
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -62,6 +111,8 @@ export default function CalendarPage() {
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
+                month={currentMonth}
+                onMonthChange={setCurrentMonth}
                 className="w-full pointer-events-auto"
                 modifiers={modifiers}
                 modifiersStyles={modifiersStyles}

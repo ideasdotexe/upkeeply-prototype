@@ -44,7 +44,6 @@ import {
 } from "@/components/ui/popover";
 import { 
   ArrowLeft, 
-  Download, 
   Save, 
   Clock, 
   CheckCircle2,
@@ -672,14 +671,6 @@ export default function FormPage() {
               >
                 <CheckCircle2 className="h-4 w-4" />
                 Submit Inspection
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={handleDownloadPDF}
-              >
-                <Download className="h-4 w-4" />
-                Download PDF
               </Button>
               <Button
                 variant="ghost"
