@@ -303,25 +303,37 @@ export default function FormPage() {
   };
 
   const handleSubmit = async () => {
-    const incompleteRequired = requiredItems.filter((item) => {
+    setIsSaving(true);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    
+    // Calculate issues count
+    const issues = allItems.filter(item => {
       const response = responses[item.id]?.value;
-      if (item.type === "combined-toggle") {
-        const combined = response as { identifier?: string; status?: boolean | null };
-        return combined?.status === undefined || combined?.status === null;
-      }
-      return response === undefined || response === null;
+      if (item.type === "ok-issue") return response === "issue";
+      if (item.type === "pass-fail") return response === "fail";
+      return false;
     });
 
-    if (incompleteRequired.length > 0) {
-      toast.error(`Please complete all required items (${incompleteRequired.length} remaining)`);
-      return;
-    }
+    // Save to inspections store
+    const newInspection = {
+      id: `insp-${Date.now()}`,
+      formId: formId || "",
+      formName: template?.name || "",
+      completedAt: new Date().toISOString(),
+      status: issues.length > 0 ? "issues" as const : "completed" as const,
+      itemsCount: allItems.length,
+      issuesCount: issues.length > 0 ? issues.length : undefined,
+    };
 
-    setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Get existing inspections and add new one
+    const stored = localStorage.getItem("upkeeply_inspections");
+    const inspections = stored ? JSON.parse(stored) : [];
+    inspections.unshift(newInspection);
+    localStorage.setItem("upkeeply_inspections", JSON.stringify(inspections));
+
     setIsSaving(false);
     toast.success("Inspection submitted successfully!");
-    navigate("/dashboard");
+    navigate("/calendar");
   };
 
   // Get all possible sections for Add Item dialog
