@@ -314,7 +314,7 @@ export default function FormPage() {
       return false;
     });
 
-    // Save to inspections store
+    // Save to inspections store with actual responses
     const newInspection = {
       id: `insp-${Date.now()}`,
       formId: formId || "",
@@ -323,6 +323,7 @@ export default function FormPage() {
       status: issues.length > 0 ? "issues" as const : "completed" as const,
       itemsCount: allItems.length,
       issuesCount: issues.length > 0 ? issues.length : undefined,
+      responses: responses, // Store actual form responses
     };
 
     // Get existing inspections and add new one
