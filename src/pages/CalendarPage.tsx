@@ -38,26 +38,22 @@ export default function CalendarPage() {
 
   // Download all forms for the selected month
   const handleDownloadAllMonth = () => {
-    const dailyMaintenanceInspections = monthInspections.filter(
-      i => i.formId === "daily-maintenance"
-    );
-
-    if (dailyMaintenanceInspections.length === 0) {
+    if (monthInspections.length === 0) {
       toast({
         title: "No forms to download",
-        description: `No Daily Maintenance forms found for ${format(currentMonth, "MMMM yyyy")}.`,
+        description: `No inspection forms found for ${format(currentMonth, "MMMM yyyy")}.`,
         variant: "destructive",
       });
       return;
     }
 
     try {
-      dailyMaintenanceInspections.forEach(inspection => {
+      monthInspections.forEach(inspection => {
         generateInspectionPDF(inspection);
       });
       toast({
         title: "PDFs Downloaded",
-        description: `${dailyMaintenanceInspections.length} Daily Maintenance form(s) for ${format(currentMonth, "MMMM yyyy")} downloaded.`,
+        description: `${monthInspections.length} inspection form(s) for ${format(currentMonth, "MMMM yyyy")} downloaded.`,
       });
     } catch (error) {
       toast({
@@ -225,16 +221,6 @@ export default function CalendarPage() {
 function InspectionCard({ inspection }: { inspection: CompletedInspection }) {
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    // Only allow download for daily-maintenance form for now
-    if (inspection.formId !== "daily-maintenance") {
-      toast({
-        title: "PDF not available",
-        description: "PDF export is currently only available for Daily Maintenance forms.",
-        variant: "destructive",
-      });
-      return;
-    }
     
     try {
       generateInspectionPDF(inspection);
