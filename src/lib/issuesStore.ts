@@ -11,71 +11,33 @@ export interface Issue {
   closedAt?: string;
 }
 
-// Initial mock data
-const initialIssues: Issue[] = [
-  {
-    id: "1",
-    title: "Fire extinguisher expired",
-    description: "Fire extinguisher on floor 3 hallway has expired and needs replacement",
-    location: "Floor 3, Hallway B",
-    priority: "high",
-    status: "open",
-    formName: "Fire Safety Inspection",
-    openedAt: "2026-01-10T09:30:00Z",
-  },
-  {
-    id: "2",
-    title: "Parking garage light out",
-    description: "Light fixture in parking level P2, section C is not working",
-    location: "Parking P2, Section C",
-    priority: "medium",
-    status: "open",
-    formName: "Parking Garage Inspection",
-    openedAt: "2026-01-09T14:15:00Z",
-  },
-  {
-    id: "3",
-    title: "Pool chemical levels low",
-    description: "Chlorine levels below acceptable range, requires adjustment",
-    location: "Pool Area",
-    priority: "high",
-    status: "open",
-    formName: "Pool & Spa Safety",
-    openedAt: "2026-01-11T08:00:00Z",
-  },
-  {
-    id: "4",
-    title: "Elevator door sensor malfunction",
-    description: "Elevator B door sensor occasionally fails to detect obstructions",
-    location: "Elevator B, All Floors",
-    priority: "high",
-    status: "resolved",
-    formName: "Elevator Inspection",
-    openedAt: "2026-01-05T10:00:00Z",
-    closedAt: "2026-01-08T16:30:00Z",
-  },
-  {
-    id: "5",
-    title: "Lobby floor tile cracked",
-    description: "Single floor tile near entrance has a visible crack",
-    location: "Main Lobby",
-    priority: "low",
-    status: "resolved",
-    formName: "Daily Maintenance",
-    openedAt: "2026-01-03T11:00:00Z",
-    closedAt: "2026-01-06T09:00:00Z",
-  },
-];
+// Initial empty data - issues will be created from form submissions
+const initialIssues: Issue[] = [];
 
-// Get stored issues from localStorage or use initial data
+// Get stored issues from localStorage or return empty array
 export function getIssues(): Issue[] {
   const stored = localStorage.getItem("upkeeply_issues");
   if (stored) {
     return JSON.parse(stored);
   }
-  // Initialize with mock data
-  localStorage.setItem("upkeeply_issues", JSON.stringify(initialIssues));
   return initialIssues;
+}
+
+// Clear all issues
+export function clearIssues(): void {
+  localStorage.removeItem("upkeeply_issues");
+}
+
+// Add a new issue
+export function addIssue(issue: Omit<Issue, "id">): Issue[] {
+  const issues = getIssues();
+  const newIssue: Issue = {
+    ...issue,
+    id: `issue-${Date.now()}`,
+  };
+  issues.unshift(newIssue);
+  saveIssues(issues);
+  return issues;
 }
 
 // Save issues to localStorage
