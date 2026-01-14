@@ -322,7 +322,7 @@ export default function FormPage() {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsSaving(false);
     toast.success("Inspection submitted successfully!");
-    navigate("/");
+    navigate("/dashboard");
   };
 
   // Get all possible sections for Add Item dialog
@@ -339,7 +339,7 @@ export default function FormPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Form Not Found</h1>
           <p className="text-muted-foreground mb-4">The form you're looking for doesn't exist.</p>
-          <Button onClick={() => navigate("/")}>Return to Dashboard</Button>
+          <Button onClick={() => navigate("/dashboard")}>Return to Dashboard</Button>
         </div>
       </div>
     );
@@ -359,7 +359,7 @@ export default function FormPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate("/")}
+                onClick={() => navigate(-1)}
                 className="shrink-0"
               >
                 <ArrowLeft className="h-5 w-5" />
