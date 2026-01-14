@@ -1,4 +1,9 @@
 // Mock inspections store for calendar data
+export interface InspectionResponse {
+  value: string | boolean | number | { identifier?: string; status?: boolean | null } | null;
+  note?: string;
+}
+
 export interface CompletedInspection {
   id: string;
   formId: string;
@@ -7,6 +12,7 @@ export interface CompletedInspection {
   status: "completed" | "issues";
   itemsCount: number;
   issuesCount?: number;
+  responses?: Record<string, InspectionResponse>;
 }
 
 // Initial mock data
