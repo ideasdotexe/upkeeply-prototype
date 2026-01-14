@@ -172,47 +172,49 @@ export default function CalendarPage() {
           </Card>
         </div>
 
-        {/* Recent inspections list */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Inspections</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {inspections.slice(0, 10).map((inspection) => (
-                <div 
-                  key={inspection.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                  onClick={() => setSelectedDate(new Date(inspection.completedAt))}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "h-2 w-2 rounded-full",
-                      inspection.status === "issues" ? "bg-destructive" : "bg-success"
-                    )} />
-                    <div>
-                      <p className="font-medium text-sm">{inspection.formName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(inspection.completedAt), "MMM d, yyyy 'at' h:mm a")}
-                      </p>
+        {/* Recent inspections list - only show if there are inspections */}
+        {inspections.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Recent Inspections</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {inspections.slice(0, 10).map((inspection) => (
+                  <div 
+                    key={inspection.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                    onClick={() => setSelectedDate(new Date(inspection.completedAt))}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "h-2 w-2 rounded-full",
+                        inspection.status === "issues" ? "bg-destructive" : "bg-success"
+                      )} />
+                      <div>
+                        <p className="font-medium text-sm">{inspection.formName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(inspection.completedAt), "MMM d, yyyy 'at' h:mm a")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {inspection.status === "issues" && (
+                        <Badge variant="destructive" className="gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {inspection.issuesCount}
+                        </Badge>
+                      )}
+                      <Badge variant="secondary">
+                        {inspection.itemsCount} items
+                      </Badge>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {inspection.status === "issues" && (
-                      <Badge variant="destructive" className="gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        {inspection.issuesCount}
-                      </Badge>
-                    )}
-                    <Badge variant="secondary">
-                      {inspection.itemsCount} items
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );
