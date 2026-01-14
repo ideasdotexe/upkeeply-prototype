@@ -76,10 +76,10 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
   
-  // Header
+  // Header - use template name
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text("DAILY MAINTENANCE INSPECTION", pageWidth / 2, 20, { align: "center" });
+  doc.text(template.name.toUpperCase(), pageWidth / 2, 20, { align: "center" });
   
   // Sub-header info
   doc.setFontSize(10);
