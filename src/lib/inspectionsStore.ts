@@ -21,8 +21,8 @@ const initialInspections: CompletedInspection[] = [
   },
   {
     id: "insp-2",
-    formId: "fire-safety",
-    formName: "Fire Safety Inspection",
+    formId: "fire-life-safety",
+    formName: "Fire & Life Safety",
     completedAt: "2026-01-13T10:00:00Z",
     status: "issues",
     itemsCount: 14,
@@ -46,8 +46,8 @@ const initialInspections: CompletedInspection[] = [
   },
   {
     id: "insp-5",
-    formId: "exterior",
-    formName: "Exterior Inspection",
+    formId: "landscaping",
+    formName: "Landscaping & Grounds",
     completedAt: "2026-01-11T09:30:00Z",
     status: "completed",
     itemsCount: 12,
@@ -62,8 +62,8 @@ const initialInspections: CompletedInspection[] = [
   },
   {
     id: "insp-7",
-    formId: "pool-spa",
-    formName: "Pool & Spa Safety",
+    formId: "pool-recreation",
+    formName: "Pool & Recreation Center",
     completedAt: "2026-01-10T11:00:00Z",
     status: "issues",
     itemsCount: 10,
@@ -79,8 +79,8 @@ const initialInspections: CompletedInspection[] = [
   },
   {
     id: "insp-9",
-    formId: "elevator",
-    formName: "Elevator Inspection",
+    formId: "mechanical-systems",
+    formName: "Mechanical Systems Inspection",
     completedAt: "2026-01-09T10:00:00Z",
     status: "completed",
     itemsCount: 8,
@@ -95,8 +95,8 @@ const initialInspections: CompletedInspection[] = [
   },
   {
     id: "insp-11",
-    formId: "hvac",
-    formName: "HVAC Systems Check",
+    formId: "gym-fitness",
+    formName: "Gym & Fitness Inspection",
     completedAt: "2026-01-08T14:00:00Z",
     status: "completed",
     itemsCount: 12,
@@ -112,9 +112,19 @@ const initialInspections: CompletedInspection[] = [
 ];
 
 export function getInspections(): CompletedInspection[] {
+  // Clear old cache and use fresh data to ensure form IDs match templates
   const stored = localStorage.getItem("upkeeply_inspections");
   if (stored) {
-    return JSON.parse(stored);
+    const parsed = JSON.parse(stored);
+    // Check if stored data has old invalid form IDs - if so, reset to initial data
+    const hasInvalidFormIds = parsed.some((i: CompletedInspection) => 
+      ["fire-safety", "exterior", "pool-spa", "elevator", "hvac"].includes(i.formId)
+    );
+    if (hasInvalidFormIds) {
+      localStorage.setItem("upkeeply_inspections", JSON.stringify(initialInspections));
+      return initialInspections;
+    }
+    return parsed;
   }
   localStorage.setItem("upkeeply_inspections", JSON.stringify(initialInspections));
   return initialInspections;
