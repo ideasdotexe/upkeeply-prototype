@@ -55,6 +55,7 @@ import {
   ChevronsUpDown
 } from "lucide-react";
 import { getFormTemplate, FormSection, ChecklistItem as ChecklistItemType, ChecklistItemType as ItemType, itemTemplateLibrary, ItemTemplate } from "@/lib/formTemplates";
+import { addIssue } from "@/lib/issuesStore";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -306,12 +307,26 @@ export default function FormPage() {
     setIsSaving(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     
-    // Calculate issues count
-    const issues = allItems.filter(item => {
+    // Find items marked as issues
+    const issueItems = allItems.filter(item => {
       const response = responses[item.id]?.value;
       if (item.type === "ok-issue") return response === "issue";
       if (item.type === "pass-fail") return response === "fail";
       return false;
+    });
+
+    // Create issues in the issues store
+    issueItems.forEach(item => {
+      const note = responses[item.id]?.note || "";
+      addIssue({
+        title: item.label,
+        description: note || `Issue found during ${template?.name || "inspection"}`,
+        location: "To be specified",
+        priority: "medium",
+        status: "open",
+        formName: template?.name || "",
+        openedAt: new Date().toISOString(),
+      });
     });
 
     // Save to inspections store with actual responses
@@ -320,10 +335,10 @@ export default function FormPage() {
       formId: formId || "",
       formName: template?.name || "",
       completedAt: new Date().toISOString(),
-      status: issues.length > 0 ? "issues" as const : "completed" as const,
+      status: issueItems.length > 0 ? "issues" as const : "completed" as const,
       itemsCount: allItems.length,
-      issuesCount: issues.length > 0 ? issues.length : undefined,
-      responses: responses, // Store actual form responses
+      issuesCount: issueItems.length > 0 ? issueItems.length : undefined,
+      responses: responses,
     };
 
     // Get existing inspections and add new one
