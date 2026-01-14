@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { 
   LayoutDashboard, 
   ClipboardList, 
@@ -8,7 +9,9 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  User
+  User,
+  Sun,
+  Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -28,6 +31,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -79,6 +87,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* User section */}
         <div className="border-t border-sidebar-border p-2">
+          {/* Theme toggle */}
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start gap-3 h-10 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground mb-1",
+              collapsed ? "px-3 justify-center" : "px-4"
+            )}
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+            {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
+          </Button>
+
           <div className={cn(
             "flex items-center gap-3 p-3 rounded-lg",
             collapsed ? "justify-center" : ""
