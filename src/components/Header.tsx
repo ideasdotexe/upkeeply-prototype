@@ -30,17 +30,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           </Button>
           
           <a href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-hero shadow-sm">
-              <Building2 className="h-5 w-5 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg tracking-tight text-foreground leading-none">
-                MASTERPLAN
-              </span>
-              <span className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase">
-                Inspection Platform
-              </span>
-            </div>
+            <span className="text-2xl font-bold text-primary">Upkeeply</span>
           </a>
         </div>
 
