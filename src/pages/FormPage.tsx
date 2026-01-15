@@ -23,6 +23,16 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -98,6 +108,10 @@ export default function FormPage() {
   const [newItemUnit, setNewItemUnit] = useState("");
   const [templateSearchOpen, setTemplateSearchOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<ItemTemplate | null>(null);
+  
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ sectionId: string; itemId: string; isCustom: boolean; label: string } | null>(null);
 
   // Merge template sections with custom sections and filter removed items
   const allSections = useMemo(() => {
@@ -179,7 +193,18 @@ export default function FormPage() {
     }));
   }, []);
 
-  const handleRemoveItem = useCallback((sectionId: string, itemId: string, isCustom: boolean) => {
+  // Show delete confirmation dialog
+  const handleRemoveItemClick = useCallback((sectionId: string, itemId: string, isCustom: boolean, label: string) => {
+    setItemToDelete({ sectionId, itemId, isCustom, label });
+    setDeleteDialogOpen(true);
+  }, []);
+
+  // Confirm deletion
+  const handleConfirmDelete = useCallback(() => {
+    if (!itemToDelete) return;
+    
+    const { sectionId, itemId, isCustom } = itemToDelete;
+    
     if (isCustom) {
       // Remove custom item
       setCustomSections(prev => 
@@ -209,8 +234,10 @@ export default function FormPage() {
       return newResponses;
     });
     
+    setDeleteDialogOpen(false);
+    setItemToDelete(null);
     toast.success("Item removed");
-  }, []);
+  }, [itemToDelete]);
 
   // Handle template selection
   const handleTemplateSelect = useCallback((tmpl: ItemTemplate) => {
@@ -638,7 +665,7 @@ export default function FormPage() {
                             note={responses[item.id]?.note}
                             onNoteChange={(note) => handleNoteChange(item.id, note)}
                             canRemove={true}
-                            onRemove={() => handleRemoveItem(section.id, item.id, !!item.isCustom)}
+                            onRemove={() => handleRemoveItemClick(section.id, item.id, !!item.isCustom, item.label)}
                           />
                         ))}
                       </div>
@@ -713,6 +740,22 @@ export default function FormPage() {
           </div>
         </div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove "{itemToDelete?.label}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setItemToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
