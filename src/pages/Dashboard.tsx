@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { format, isToday, isYesterday } from "date-fns";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { FormCard } from "@/components/FormCard";
 import { StatsCard } from "@/components/StatsCard";
@@ -16,22 +17,29 @@ import {
 } from "lucide-react";
 import { formTemplates, getFormsByFrequency } from "@/lib/formTemplates";
 import { getOpenIssuesCount } from "@/lib/issuesStore";
+import { getInspections, CompletedInspection } from "@/lib/inspectionsStore";
 
-const recentInspections = [
-  { formName: "Daily Maintenance", date: "Today, 8:30 AM", status: "completed" as const, itemsCount: 15 },
-  { formName: "Fire Safety", date: "Yesterday", status: "issues" as const, itemsCount: 14, issuesCount: 2 },
-  { formName: "Parking Garage", date: "Jan 9, 2026", status: "completed" as const, itemsCount: 11 },
-  { formName: "Exterior", date: "Jan 8, 2026", status: "draft" as const, itemsCount: 12 },
-  { formName: "Daily Maintenance", date: "Jan 8, 2026", status: "completed" as const, itemsCount: 15 },
-];
+// Format inspection date for display
+function formatInspectionDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isToday(date)) {
+    return `Today, ${format(date, "h:mm a")}`;
+  }
+  if (isYesterday(date)) {
+    return "Yesterday";
+  }
+  return format(date, "MMM d, yyyy");
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
   const [openIssuesCount, setOpenIssuesCount] = useState(0);
+  const [recentInspections, setRecentInspections] = useState<CompletedInspection[]>([]);
 
   useEffect(() => {
     setOpenIssuesCount(getOpenIssuesCount());
+    setRecentInspections(getInspections().slice(0, 5));
   }, []);
 
   const dailyForms = getFormsByFrequency("daily");
@@ -59,7 +67,7 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            <span>Saturday, January 11, 2026</span>
+            <span>{format(new Date(), "EEEE, MMMM d, yyyy")}</span>
           </div>
         </div>
 
@@ -167,14 +175,24 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="space-y-0">
-                  {recentInspections.map((inspection, index) => (
-                    <RecentInspection
-                      key={index}
-                      {...inspection}
-                    />
-                  ))}
-                </div>
+                {recentInspections.length > 0 ? (
+                  <div className="space-y-0">
+                    {recentInspections.map((inspection) => (
+                      <RecentInspection
+                        key={inspection.id}
+                        formName={inspection.formName}
+                        date={formatInspectionDate(inspection.completedAt)}
+                        status={inspection.status === "issues" ? "issues" : "completed"}
+                        itemsCount={inspection.itemsCount}
+                        issuesCount={inspection.issuesCount}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No inspections completed yet
+                  </p>
+                )}
               </CardContent>
             </Card>
 
