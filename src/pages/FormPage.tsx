@@ -69,9 +69,16 @@ import { addIssue } from "@/lib/issuesStore";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+interface ExtendedValue {
+  mainValue?: string | boolean | number | { identifier?: string; status?: boolean | null } | null;
+  description?: string;
+  actionBy?: string;
+  completionDate?: string;
+}
+
 interface FormResponse {
   [itemId: string]: {
-    value: string | boolean | number | { identifier?: string; status?: boolean | null } | null;
+    value: ExtendedValue | null;
     note?: string;
   };
 }
@@ -155,11 +162,13 @@ export default function FormPage() {
   const requiredItems = allItems.filter((item) => item.required);
   const completedRequired = requiredItems.filter((item) => {
     const response = responses[item.id]?.value;
+    if (!response) return false;
+    const mainValue = response.mainValue;
     if (item.type === "combined-toggle") {
-      const combined = response as { identifier?: string; status?: boolean | null };
+      const combined = mainValue as { identifier?: string; status?: boolean | null };
       return combined?.status !== undefined && combined?.status !== null;
     }
-    return response !== undefined && response !== null;
+    return mainValue !== undefined && mainValue !== null;
   });
   const progress = requiredItems.length > 0 
     ? Math.round((completedRequired.length / requiredItems.length) * 100)
@@ -167,10 +176,12 @@ export default function FormPage() {
 
   // Count issues
   const issuesCount = Object.entries(responses).filter(([_, r]) => {
-    if (typeof r.value === "object" && r.value !== null && "status" in r.value) {
-      return r.value.status === false;
+    if (!r.value) return false;
+    const mainValue = r.value.mainValue;
+    if (typeof mainValue === "object" && mainValue !== null && "status" in mainValue) {
+      return mainValue.status === false;
     }
-    return r.value === false;
+    return mainValue === false;
   }).length;
 
   const handleValueChange = useCallback((itemId: string, value: FormResponse[string]["value"]) => {
@@ -337,8 +348,10 @@ export default function FormPage() {
     // Find items marked as issues
     const issueItems = allItems.filter(item => {
       const response = responses[item.id]?.value;
-      if (item.type === "ok-issue") return response === "issue";
-      if (item.type === "pass-fail") return response === "fail";
+      if (!response) return false;
+      const mainValue = response.mainValue;
+      if (item.type === "ok-issue") return mainValue === false;
+      if (item.type === "pass-fail") return mainValue === false;
       return false;
     });
 
@@ -616,11 +629,13 @@ export default function FormPage() {
                 const sectionRequired = sectionItems.filter(i => i.required);
                 const sectionCompleted = sectionRequired.filter(item => {
                   const response = responses[item.id]?.value;
+                  if (!response) return false;
+                  const mainValue = response.mainValue;
                   if (item.type === "combined-toggle") {
-                    const combined = response as { identifier?: string; status?: boolean | null };
+                    const combined = mainValue as { identifier?: string; status?: boolean | null };
                     return combined?.status !== undefined && combined?.status !== null;
                   }
-                  return response !== undefined && response !== null;
+                  return mainValue !== undefined && mainValue !== null;
                 });
                 const sectionProgress = sectionRequired.length > 0
                   ? Math.round((sectionCompleted.length / sectionRequired.length) * 100)

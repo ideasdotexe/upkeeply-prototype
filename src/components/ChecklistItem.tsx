@@ -9,19 +9,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle, XCircle, AlertCircle, Minus, Power, PowerOff, Lock, Unlock, Trash2 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CheckCircle, XCircle, AlertCircle, Minus, Power, PowerOff, Lock, Unlock, Trash2, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChecklistItem as ChecklistItemType } from "@/lib/formTemplates";
+import { format } from "date-fns";
 
 interface CombinedValue {
   identifier?: string;
   status?: boolean | null;
 }
 
+interface ExtendedValue {
+  mainValue?: string | boolean | number | CombinedValue | null;
+  description?: string;
+  actionBy?: string;
+  completionDate?: string;
+}
+
 interface ChecklistItemProps {
   item: ChecklistItemType;
-  value: string | boolean | number | CombinedValue | null;
-  onChange: (value: string | boolean | number | CombinedValue | null) => void;
+  value: ExtendedValue | null;
+  onChange: (value: ExtendedValue | null) => void;
   note?: string;
   onNoteChange?: (note: string) => void;
   onRemove?: () => void;
@@ -38,6 +52,23 @@ export function ChecklistItem({
   canRemove = false,
 }: ChecklistItemProps) {
   const [showNote, setShowNote] = useState(!!note);
+  const [dateOpen, setDateOpen] = useState(false);
+
+  // Extract extended values with defaults
+  const extendedValue: ExtendedValue = value || {};
+  const mainValue = extendedValue.mainValue;
+  const description = extendedValue.description || "";
+  const actionBy = extendedValue.actionBy || "";
+  const completionDate = extendedValue.completionDate || format(new Date(), "yyyy-MM-dd");
+
+  const updateField = (field: keyof ExtendedValue, fieldValue: unknown) => {
+    onChange({
+      ...extendedValue,
+      [field]: fieldValue,
+      // Auto-fill completion date if not set
+      completionDate: extendedValue.completionDate || format(new Date(), "yyyy-MM-dd"),
+    });
+  };
 
   const renderToggleButtons = (
     currentValue: boolean | null | undefined,
@@ -115,10 +146,10 @@ export function ChecklistItem({
     );
   };
 
-  const renderInput = () => {
+  const renderMainInput = () => {
     switch (item.type) {
       case "combined-toggle": {
-        const combinedValue = (value as CombinedValue) || {};
+        const combinedValue = (mainValue as CombinedValue) || {};
         return (
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
@@ -131,9 +162,8 @@ export function ChecklistItem({
                 pattern="[0-9]*"
                 value={combinedValue.identifier || ""}
                 onChange={(e) => {
-                  // Only allow numbers
                   const numValue = e.target.value.replace(/[^0-9]/g, "");
-                  onChange({
+                  updateField("mainValue", {
                     ...combinedValue,
                     identifier: numValue || undefined,
                   });
@@ -144,7 +174,7 @@ export function ChecklistItem({
             </div>
             {renderToggleButtons(
               combinedValue.status,
-              (val) => onChange({ ...combinedValue, status: val }),
+              (val) => updateField("mainValue", { ...combinedValue, status: val }),
               item.toggleType || "on-off"
             )}
           </div>
@@ -154,8 +184,8 @@ export function ChecklistItem({
       case "select":
         return (
           <Select
-            value={value as string || ""}
-            onValueChange={(val) => onChange(val || null)}
+            value={mainValue as string || ""}
+            onValueChange={(val) => updateField("mainValue", val || null)}
           >
             <SelectTrigger className="w-24 h-8 text-sm">
               <SelectValue placeholder="Select" />
@@ -171,24 +201,24 @@ export function ChecklistItem({
         );
 
       case "pass-fail":
-        return renderToggleButtons(value as boolean | null, (val) => onChange(val), "pass-fail");
+        return renderToggleButtons(mainValue as boolean | null, (val) => updateField("mainValue", val), "pass-fail");
 
       case "ok-issue":
-        return renderToggleButtons(value as boolean | null, (val) => onChange(val), "ok-issue");
+        return renderToggleButtons(mainValue as boolean | null, (val) => updateField("mainValue", val), "ok-issue");
 
       case "on-off":
-        return renderToggleButtons(value as boolean | null, (val) => onChange(val), "on-off");
+        return renderToggleButtons(mainValue as boolean | null, (val) => updateField("mainValue", val), "on-off");
 
       case "open-closed":
-        return renderToggleButtons(value as boolean | null, (val) => onChange(val), "open-closed");
+        return renderToggleButtons(mainValue as boolean | null, (val) => updateField("mainValue", val), "open-closed");
 
       case "number":
         return (
           <div className="flex items-center gap-2">
             <Input
               type="number"
-              value={value as number ?? ""}
-              onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
+              value={mainValue as number ?? ""}
+              onChange={(e) => updateField("mainValue", e.target.value ? Number(e.target.value) : null)}
               className="w-24 h-8 text-sm"
               placeholder="0"
             />
@@ -202,8 +232,8 @@ export function ChecklistItem({
         return (
           <Input
             type="text"
-            value={value as string ?? ""}
-            onChange={(e) => onChange(e.target.value || null)}
+            value={mainValue as string ?? ""}
+            onChange={(e) => updateField("mainValue", e.target.value || null)}
             className="max-w-xs h-8 text-sm"
             placeholder={item.placeholder || "Enter details..."}
           />
@@ -212,8 +242,8 @@ export function ChecklistItem({
       case "textarea":
         return (
           <Textarea
-            value={value as string ?? ""}
-            onChange={(e) => onChange(e.target.value || null)}
+            value={mainValue as string ?? ""}
+            onChange={(e) => updateField("mainValue", e.target.value || null)}
             className="min-h-[80px] resize-none text-sm w-full"
             placeholder={item.placeholder || "Enter details..."}
           />
@@ -225,8 +255,8 @@ export function ChecklistItem({
   };
 
   const hasIssue = 
-    (item.type === "combined-toggle" && (value as CombinedValue)?.status === false) ||
-    (value === false && (item.type === "pass-fail" || item.type === "ok-issue" || item.type === "open-closed"));
+    (item.type === "combined-toggle" && (mainValue as CombinedValue)?.status === false) ||
+    (mainValue === false && (item.type === "pass-fail" || item.type === "ok-issue" || item.type === "open-closed"));
 
   // For textarea without label, render full-width
   if (item.type === "textarea" && !item.label) {
@@ -237,7 +267,7 @@ export function ChecklistItem({
       )}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
-            {renderInput()}
+            {renderMainInput()}
           </div>
           {canRemove && onRemove && (
             <Button
@@ -258,11 +288,11 @@ export function ChecklistItem({
 
   return (
     <div className={cn(
-      "rounded-md border px-3 py-2.5 transition-all",
+      "rounded-md border px-3 py-3 transition-all",
       hasIssue ? "border-warning/50 bg-warning/5" : "border-border/50 bg-card/50"
     )}>
+      {/* Row 1: Item Name and Status */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        {/* Label */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <span className="text-sm font-medium text-foreground">{item.label}</span>
           {item.required && (
@@ -270,11 +300,9 @@ export function ChecklistItem({
           )}
         </div>
 
-        {/* Input */}
         <div className="flex items-center gap-2">
-          {renderInput()}
+          {renderMainInput()}
           
-          {/* Actions */}
           {item.type !== "textarea" && (
             <Button
               type="button"
@@ -303,9 +331,67 @@ export function ChecklistItem({
         </div>
       </div>
 
+      {/* Row 2: Description, Action By, Completion Date */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 pt-3 border-t border-border/30">
+        {/* Description */}
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">Description</label>
+          <Input
+            type="text"
+            value={description}
+            onChange={(e) => updateField("description", e.target.value)}
+            className="h-8 text-sm"
+            placeholder="Enter description..."
+          />
+        </div>
+
+        {/* Action By */}
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">Action By</label>
+          <Input
+            type="text"
+            value={actionBy}
+            onChange={(e) => updateField("actionBy", e.target.value)}
+            className="h-8 text-sm"
+            placeholder="Person name..."
+          />
+        </div>
+
+        {/* Completion Date */}
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">Completion Date</label>
+          <Popover open={dateOpen} onOpenChange={setDateOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full h-8 justify-start text-left font-normal text-sm",
+                  !completionDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                {completionDate ? format(new Date(completionDate), "MMM dd, yyyy") : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={completionDate ? new Date(completionDate) : undefined}
+                onSelect={(date) => {
+                  updateField("completionDate", date ? format(date, "yyyy-MM-dd") : null);
+                  setDateOpen(false);
+                }}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
       {/* Note Field */}
       {showNote && item.type !== "textarea" && (
-        <div className="mt-2 pt-2 border-t border-border/30">
+        <div className="mt-3 pt-3 border-t border-border/30">
           <Textarea
             value={note || ""}
             onChange={(e) => onNoteChange?.(e.target.value)}
