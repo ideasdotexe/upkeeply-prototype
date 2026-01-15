@@ -49,6 +49,12 @@ const Login = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Demo login - accepts any credentials
+    // Store login info for PDF generation
+    localStorage.setItem("loginInfo", JSON.stringify({
+      companyId,
+      buildingId,
+      username
+    }));
     toast.success("Welcome back!");
     navigate("/dashboard");
     

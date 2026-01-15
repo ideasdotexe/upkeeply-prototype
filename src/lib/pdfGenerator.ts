@@ -4,6 +4,24 @@ import { format } from "date-fns";
 import { CompletedInspection, InspectionResponse } from "./inspectionsStore";
 import { getFormTemplate } from "./formTemplates";
 
+interface LoginInfo {
+  companyId: string;
+  buildingId: string;
+  username: string;
+}
+
+function getLoginInfo(): LoginInfo {
+  try {
+    const stored = localStorage.getItem("loginInfo");
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error("Failed to parse login info:", e);
+  }
+  return { companyId: "", buildingId: "", username: "" };
+}
+
 export function generateInspectionPDF(inspection: CompletedInspection): void {
   const template = getFormTemplate(inspection.formId);
   
@@ -15,6 +33,10 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
   // Use actual stored responses, or empty object if none
   const responses = inspection.responses || {};
   const completedDate = new Date(inspection.completedAt);
+  const loginInfo = getLoginInfo();
+  
+  // Only include extended header for forms with hasExtendedFields
+  const hasExtendedHeader = template.hasExtendedFields === true;
   
   // Create PDF in landscape mode
   const doc = new jsPDF({
@@ -27,27 +49,89 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
   
-  // Header - use template name
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text(template.name.toUpperCase(), pageWidth / 2, 20, { align: "center" });
+  let yPosition = 15;
   
-  // Sub-header info
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(`DATE: ${format(completedDate, "MMMM d, yyyy")}`, margin, 30);
-  doc.text(`TIME: ${format(completedDate, "h:mm a")}`, margin, 36);
-  doc.text(`STATUS: ${inspection.status === "completed" ? "COMPLETED" : "ISSUES FOUND"}`, pageWidth - margin - 50, 30);
-  doc.text(`ITEMS: ${inspection.itemsCount}`, pageWidth - margin - 50, 36);
-  if (inspection.issuesCount) {
-    doc.text(`ISSUES: ${inspection.issuesCount}`, pageWidth - margin - 50, 42);
+  if (hasExtendedHeader) {
+    // Extended header for Amenities, Parking Garage, Exterior forms
+    
+    // Logo placeholder (Upkeeply text)
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(220, 53, 69); // Red color like in the reference image
+    doc.text("Upkeeply", margin, yPosition);
+    
+    // Form code on the right
+    if (template.formCode) {
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(template.formCode, pageWidth - margin, yPosition, { align: "right" });
+    }
+    
+    yPosition += 10;
+    
+    // Form title - underlined and centered
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0, 0, 0);
+    const titleText = `BUILDING INSPECTION REPORT - ${template.shortName.toUpperCase()}`;
+    doc.text(titleText, pageWidth / 2, yPosition, { align: "center" });
+    
+    // Underline the title
+    const titleWidth = doc.getTextWidth(titleText);
+    const titleX = (pageWidth - titleWidth) / 2;
+    doc.setLineWidth(0.5);
+    doc.line(titleX, yPosition + 1, titleX + titleWidth, yPosition + 1);
+    
+    yPosition += 12;
+    
+    // Corporation No and Address row
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const leftColX = margin;
+    const rightColX = pageWidth / 2 + 10;
+    
+    // Corporation No (from Company ID)
+    doc.text(`Corporation No: ${loginInfo.companyId || "________________"}`, leftColX, yPosition);
+    // Address (from Building ID)
+    doc.text(`Address: ${loginInfo.buildingId || "_________________________"}`, rightColX, yPosition);
+    
+    yPosition += 8;
+    
+    // Date and Inspected By row
+    doc.text(`Date: ${format(completedDate, "MMMM d, yyyy")}`, leftColX, yPosition);
+    // Inspected By (from username)
+    doc.text(`Inspected By: ${loginInfo.username || "________________"}`, rightColX, yPosition);
+    
+    yPosition += 8;
+    
+    // Line separator
+    doc.setLineWidth(0.5);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    
+    yPosition += 7;
+  } else {
+    // Standard header for other forms
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(template.name.toUpperCase(), pageWidth / 2, 20, { align: "center" });
+    
+    // Sub-header info
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`DATE: ${format(completedDate, "MMMM d, yyyy")}`, margin, 30);
+    doc.text(`TIME: ${format(completedDate, "h:mm a")}`, margin, 36);
+    doc.text(`STATUS: ${inspection.status === "completed" ? "COMPLETED" : "ISSUES FOUND"}`, pageWidth - margin - 50, 30);
+    doc.text(`ITEMS: ${inspection.itemsCount}`, pageWidth - margin - 50, 36);
+    if (inspection.issuesCount) {
+      doc.text(`ISSUES: ${inspection.issuesCount}`, pageWidth - margin - 50, 42);
+    }
+    
+    // Line separator
+    doc.setLineWidth(0.5);
+    doc.line(margin, 48, pageWidth - margin, 48);
+    
+    yPosition = 55;
   }
-  
-  // Line separator
-  doc.setLineWidth(0.5);
-  doc.line(margin, 48, pageWidth - margin, 48);
-  
-  let yPosition = 55;
   
   // Iterate through sections
   template.sections.forEach((section) => {

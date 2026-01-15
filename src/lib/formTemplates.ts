@@ -128,6 +128,7 @@ export interface FormTemplate {
   sections: FormSection[];
   items: ChecklistItem[]; // Flattened for backward compatibility
   hasExtendedFields?: boolean; // Whether to show Description, Action By, Completion Date fields
+  formCode?: string; // Form code like #C-27A-01
 }
 
 // Section definitions for Daily Maintenance
@@ -355,6 +356,7 @@ export const formTemplates: FormTemplate[] = [
     estimatedTime: "30-40 min",
     sections: [],
     hasExtendedFields: true,
+    formCode: "#C-27A-01",
     items: [
       { id: "gatehouse", label: "Gatehouse", type: "ok-issue", required: true },
       { id: "visitor-parking", label: "Visitor Parking", type: "ok-issue", required: true },
@@ -386,6 +388,7 @@ export const formTemplates: FormTemplate[] = [
     estimatedTime: "15-20 min",
     sections: [],
     hasExtendedFields: true,
+    formCode: "#C-27B-01",
     items: [
       { id: "garage-door", label: "Garage Door", type: "ok-issue", required: true },
       { id: "drive-lanes", label: "Drive Lanes", type: "ok-issue", required: true },
@@ -451,6 +454,7 @@ export const formTemplates: FormTemplate[] = [
     frequency: "weekly",
     estimatedTime: "25-30 min",
     hasExtendedFields: true,
+    formCode: "#C-27B-01",
     sections: [
       {
         id: "amenities-main",
