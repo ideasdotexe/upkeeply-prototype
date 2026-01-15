@@ -2,6 +2,9 @@
 export interface InspectionResponse {
   value: string | boolean | number | { identifier?: string; status?: boolean | null } | null;
   note?: string;
+  description?: string;
+  actionBy?: string;
+  completionDate?: string;
 }
 
 export interface CompletedInspection {

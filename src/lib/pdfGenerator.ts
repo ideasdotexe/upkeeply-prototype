@@ -133,26 +133,30 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
     yPosition = 55;
   }
   
-  // Iterate through sections
-  template.sections.forEach((section) => {
+  // Helper function to generate table for items
+  const generateItemsTable = (items: typeof template.items, sectionTitle?: string) => {
+    if (items.length === 0) return;
+    
     // Check if we need a new page
     if (yPosition > pageHeight - 40) {
       doc.addPage();
       yPosition = 20;
     }
     
-    // Section header
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setFillColor(240, 240, 240);
-    doc.rect(margin, yPosition - 5, pageWidth - margin * 2, 8, "F");
-    doc.text(section.title, margin + 3, yPosition);
-    yPosition += 10;
+    // Section header (if provided)
+    if (sectionTitle) {
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setFillColor(240, 240, 240);
+      doc.rect(margin, yPosition - 5, pageWidth - margin * 2, 8, "F");
+      doc.text(sectionTitle, margin + 3, yPosition);
+      yPosition += 10;
+    }
     
-    // Prepare table data for section
+    // Prepare table data
     const tableData: (string | { content: string; styles: { fillColor?: [number, number, number] } })[][] = [];
     
-    section.items.forEach(item => {
+    items.forEach(item => {
       const response = responses[item.id] as InspectionResponse | undefined;
       let displayValue = "-"; // Empty/not filled shows as dash
       let hasIssue = false;
@@ -217,20 +221,52 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
         }
       }
       
-      const row: (string | { content: string; styles: { fillColor: [number, number, number] } })[] = [
-        item.label,
-        hasIssue 
-          ? { content: displayValue, styles: { fillColor: [255, 200, 200] as [number, number, number] } }
-          : displayValue,
-        response?.note || ""
-      ];
-      tableData.push(row);
+      // For extended fields forms, include description, action by, completion date
+      if (hasExtendedHeader) {
+        const row: (string | { content: string; styles: { fillColor: [number, number, number] } })[] = [
+          item.label,
+          hasIssue 
+            ? { content: displayValue, styles: { fillColor: [255, 200, 200] as [number, number, number] } }
+            : displayValue,
+          response?.description || "",
+          response?.actionBy || "",
+          response?.completionDate || ""
+        ];
+        tableData.push(row);
+      } else {
+        const row: (string | { content: string; styles: { fillColor: [number, number, number] } })[] = [
+          item.label,
+          hasIssue 
+            ? { content: displayValue, styles: { fillColor: [255, 200, 200] as [number, number, number] } }
+            : displayValue,
+          response?.note || ""
+        ];
+        tableData.push(row);
+      }
     });
     
-    // Generate table for section
+    // Generate table
+    const tableHead = hasExtendedHeader 
+      ? [["Item", "Status", "Description", "Action By", "Completion Date"]]
+      : [["Item", "Status", "Notes"]];
+    
+    const columnStyles = hasExtendedHeader
+      ? {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: "auto" },
+          3: { cellWidth: 35 },
+          4: { cellWidth: 35 },
+        }
+      : {
+          0: { cellWidth: 80 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: "auto" },
+        };
+    
     autoTable(doc, {
       startY: yPosition,
-      head: [["Item", "Status", "Notes"]],
+      head: tableHead,
       body: tableData,
       margin: { left: margin, right: margin },
       styles: {
@@ -242,11 +278,7 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
         textColor: [255, 255, 255],
         fontStyle: "bold",
       },
-      columnStyles: {
-        0: { cellWidth: 80 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: "auto" },
-      },
+      columnStyles: columnStyles as any,
       didDrawPage: () => {
         // Footer on each page
         doc.setFontSize(8);
@@ -261,18 +293,20 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
     });
     
     yPosition = (doc as any).lastAutoTable.finalY + 10;
-  });
+  };
   
-  // Footer with signature line
-  if (yPosition < pageHeight - 30) {
-    yPosition = pageHeight - 30;
-    doc.setLineWidth(0.3);
-    doc.line(margin, yPosition, margin + 60, yPosition);
-    doc.setFontSize(9);
-    doc.text("Operator Signature", margin, yPosition + 5);
-    
-    doc.line(pageWidth - margin - 60, yPosition, pageWidth - margin, yPosition);
-    doc.text("Date", pageWidth - margin - 60, yPosition + 5);
+  // Check if template has sections with items
+  if (template.sections && template.sections.length > 0) {
+    template.sections.forEach((section) => {
+      if (section.items && section.items.length > 0) {
+        generateItemsTable(section.items, section.title);
+      }
+    });
+  }
+  
+  // Also check for direct items (not in sections)
+  if (template.items && template.items.length > 0) {
+    generateItemsTable(template.items);
   }
   
   // Save the PDF
