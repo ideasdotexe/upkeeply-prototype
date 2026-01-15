@@ -373,138 +373,27 @@ export const formTemplates: FormTemplate[] = [
     icon: Car,
     color: "bg-accent",
     frequency: "weekly",
-    estimatedTime: "30-40 min",
+    estimatedTime: "15-20 min",
     sections: [
       {
-        id: "garage-door",
-        title: "Garage Door",
+        id: "parking-garage-inspection",
+        title: "Parking Garage Inspection",
         items: [
-          { id: "garage-door-operation", label: "Garage Door Operation", type: "ok-issue", required: true },
-          { id: "garage-door-sensors", label: "Garage Door Sensors", type: "ok-issue", required: true },
-          { id: "garage-door-remote", label: "Garage Door Remote/Access Control", type: "ok-issue", required: true },
-        ]
-      },
-      {
-        id: "drive-lanes",
-        title: "Drive Lanes",
-        items: [
-          { id: "drive-lanes-condition", label: "Drive Lanes Surface Condition", type: "ok-issue", required: true },
-          { id: "drive-lanes-markings", label: "Drive Lanes Markings", type: "ok-issue", required: true },
-          { id: "drive-lanes-clearance", label: "Drive Lanes Clearance", type: "ok-issue", required: true },
-        ]
-      },
-      {
-        id: "garage-lights",
-        title: "Lights",
-        items: [
-          { id: "garage-lights-operation", label: "Garage Lights Operation", type: "ok-issue", required: true },
-          { id: "garage-lights-fixtures", label: "Light Fixtures Condition", type: "ok-issue", required: true },
-          { id: "garage-emergency-lights", label: "Emergency Lighting", type: "ok-issue", required: true },
-        ]
-      },
-      {
-        id: "garage-signs",
-        title: "Signs",
-        items: [
-          { id: "garage-signs-visibility", label: "Signs Visibility", type: "ok-issue", required: true },
-          { id: "garage-signs-condition", label: "Signs Condition", type: "ok-issue", required: true },
-          { id: "garage-directional-signs", label: "Directional Signs", type: "ok-issue", required: true },
-        ]
-      },
-      {
-        id: "garage-mirrors",
-        title: "Mirrors",
-        items: [
-          { id: "garage-mirrors-condition", label: "Mirrors Condition", type: "ok-issue", required: true },
-          { id: "garage-mirrors-visibility", label: "Mirrors Visibility/Cleanliness", type: "ok-issue", required: true },
-        ]
-      },
-      {
-        id: "garage-fans",
-        title: "Fans",
-        items: [
-          { id: "garage-exhaust-fan-1", label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", required: true },
-          { id: "garage-exhaust-fan-2", label: "Exhaust Fan", type: "combined-toggle", toggleType: "on-off", identifierLabel: "Fan #", required: true },
-        ]
-      },
-      {
-        id: "garage-drains",
-        title: "Drains / Catch Basins",
-        items: [
-          { id: "garage-drains-condition", label: "Drains Condition", type: "ok-issue", required: true },
-          { id: "garage-catch-basins", label: "Catch Basins Clear", type: "ok-issue", required: true },
-          { id: "garage-drainage-flow", label: "Drainage Flow", type: "ok-issue", required: true },
-        ]
-      },
-      {
-        id: "garage-heating",
-        title: "Heating / Ramp",
-        items: [
-          { id: "garage-ramp-heating", label: "Ramp Heating System", type: "on-off", required: true },
-          { id: "garage-ramp-condition", label: "Ramp Surface Condition", type: "ok-issue", required: true },
-          { id: "garage-heating-controls", label: "Heating Controls", type: "ok-issue", required: true },
-        ]
-      },
-      {
-        id: "garage-sprinkler",
-        title: "Sprinkler System",
-        items: [
-          { id: "garage-sprinkler-valves", label: "Sprinkler Valves", type: "open-closed", required: true },
-          { id: "garage-sprinkler-heads", label: "Sprinkler Heads Condition", type: "ok-issue", required: true },
-          { id: "garage-sprinkler-pressure", label: "Sprinkler System Pressure", type: "number", unit: "PSI", required: true },
-        ]
-      },
-      {
-        id: "garage-firehose",
-        title: "Firehose",
-        items: [
-          { id: "garage-firehose-cabinet", label: "Firehose Cabinet Condition", type: "ok-issue", required: true },
-          { id: "garage-firehose-accessible", label: "Firehose Accessible", type: "ok-issue", required: true },
-          { id: "garage-firehose-pressure", label: "Firehose Cabinet Pressure", type: "number", unit: "PSI", required: true },
-        ]
-      },
-      {
-        id: "garage-walls-ceiling",
-        title: "Walls / Ceiling",
-        items: [
-          { id: "garage-walls-condition", label: "Walls Condition", type: "ok-issue", required: true },
-          { id: "garage-ceiling-condition", label: "Ceiling Condition", type: "ok-issue", required: true },
-          { id: "garage-water-damage", label: "Water Damage/Stains", type: "ok-issue", required: true },
-        ]
-      },
-      {
-        id: "garage-floor",
-        title: "Floor",
-        items: [
-          { id: "garage-floor-condition", label: "Floor Surface Condition", type: "ok-issue", required: true },
-          { id: "garage-floor-cracks", label: "Floor Cracks/Damage", type: "ok-issue", required: true },
-          { id: "garage-floor-coating", label: "Floor Coating/Paint", type: "ok-issue", required: true },
-        ]
-      },
-      {
-        id: "garage-columns",
-        title: "Columns",
-        items: [
-          { id: "garage-columns-condition", label: "Columns Structural Condition", type: "ok-issue", required: true },
-          { id: "garage-columns-markings", label: "Column Markings/Bumpers", type: "ok-issue", required: true },
-        ]
-      },
-      {
-        id: "garage-parking-spaces",
-        title: "Parking Spaces",
-        items: [
-          { id: "garage-spaces-markings", label: "Parking Space Markings", type: "ok-issue", required: true },
-          { id: "garage-spaces-numbers", label: "Space Numbers Visible", type: "ok-issue", required: true },
-          { id: "garage-handicap-spaces", label: "Handicap Spaces Compliant", type: "ok-issue", required: true },
-        ]
-      },
-      {
-        id: "garage-exit-entrance",
-        title: "Exit / Entrance",
-        items: [
-          { id: "garage-exit-signs", label: "Exit Signs Illuminated", type: "ok-issue", required: true },
-          { id: "garage-entrance-clearance", label: "Entrance Clearance Bars", type: "ok-issue", required: true },
-          { id: "garage-pedestrian-doors", label: "Pedestrian Doors", type: "ok-issue", required: true },
+          { id: "garage-door", label: "Garage Door", type: "ok-issue", required: true },
+          { id: "drive-lanes", label: "Drive Lanes", type: "ok-issue", required: true },
+          { id: "lights", label: "Lights", type: "ok-issue", required: true },
+          { id: "signs", label: "Signs", type: "ok-issue", required: true },
+          { id: "mirrors", label: "Mirrors", type: "ok-issue", required: true },
+          { id: "fans", label: "Fans", type: "ok-issue", required: true },
+          { id: "drains-catch-basins", label: "Drains / Catch Basins", type: "ok-issue", required: true },
+          { id: "heating-ramp", label: "Heating Ramp", type: "ok-issue", required: true },
+          { id: "sprinkler-system", label: "Sprinkler System", type: "ok-issue", required: true },
+          { id: "firehose", label: "Firehose", type: "ok-issue", required: true },
+          { id: "fire-extinguisher", label: "Fire Extinguisher", type: "ok-issue", required: true },
+          { id: "elevator", label: "Elevator", type: "ok-issue", required: true },
+          { id: "storage-locker-room", label: "Storage / Locker Room", type: "ok-issue", required: true },
+          { id: "garbage-room", label: "Garbage Room", type: "ok-issue", required: true },
+          { id: "stairwell", label: "Stairwell", type: "ok-issue", required: true },
         ]
       },
     ],
