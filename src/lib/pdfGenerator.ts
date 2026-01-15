@@ -295,17 +295,19 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
     yPosition = (doc as any).lastAutoTable.finalY + 10;
   };
   
-  // Check if template has sections with items
-  if (template.sections && template.sections.length > 0) {
-    template.sections.forEach((section) => {
+  // Check if template has sections with items - use sections OR items, not both
+  const hasSectionsWithItems = template.sections && template.sections.length > 0 && 
+    template.sections.some(section => section.items && section.items.length > 0);
+  
+  if (hasSectionsWithItems) {
+    // Use sections (preferred for forms with structured sections)
+    template.sections!.forEach((section) => {
       if (section.items && section.items.length > 0) {
         generateItemsTable(section.items, section.title);
       }
     });
-  }
-  
-  // Also check for direct items (not in sections)
-  if (template.items && template.items.length > 0) {
+  } else if (template.items && template.items.length > 0) {
+    // Fall back to direct items only if no sections with items exist
     generateItemsTable(template.items);
   }
   
