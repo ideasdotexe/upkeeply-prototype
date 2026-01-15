@@ -146,7 +146,7 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
     // Generate table for section
     autoTable(doc, {
       startY: yPosition,
-      head: [["Item", "Value", "Notes"]],
+      head: [["Item", "Status", "Notes"]],
       body: tableData,
       margin: { left: margin, right: margin },
       styles: {
