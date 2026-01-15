@@ -139,14 +139,14 @@ export default function CalendarPage() {
           </Card>
 
           {/* Selected date details */}
-          <Card>
-            <CardHeader className="pb-3">
+          <Card className="flex flex-col max-h-[500px]">
+            <CardHeader className="pb-3 flex-shrink-0">
               <CardTitle className="text-base flex items-center gap-2">
                 <CalendarDays className="h-5 w-5 text-primary" />
                 {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-y-auto flex-1">
               {!selectedDate ? (
                 <p className="text-muted-foreground text-sm">
                   Click on a date to view completed inspections
