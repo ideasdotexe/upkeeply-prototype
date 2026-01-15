@@ -670,6 +670,7 @@ export default function FormPage() {
                             onChange={(value) => handleValueChange(item.id, value)}
                             canRemove={true}
                             onRemove={() => handleRemoveItemClick(section.id, item.id, !!item.isCustom, item.label)}
+                            showExtendedFields={template?.hasExtendedFields}
                           />
                         ))}
                       </div>
