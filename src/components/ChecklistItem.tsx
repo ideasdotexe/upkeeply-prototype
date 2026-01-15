@@ -38,6 +38,7 @@ interface ChecklistItemProps {
   onChange: (value: ExtendedValue | null) => void;
   onRemove?: () => void;
   canRemove?: boolean;
+  showExtendedFields?: boolean;
 }
 
 export function ChecklistItem({
@@ -46,6 +47,7 @@ export function ChecklistItem({
   onChange,
   onRemove,
   canRemove = false,
+  showExtendedFields = false,
 }: ChecklistItemProps) {
   const [dateOpen, setDateOpen] = useState(false);
 
@@ -313,63 +315,65 @@ export function ChecklistItem({
         </div>
       </div>
 
-      {/* Row 2: Description, Action By, Completion Date */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 pt-3 border-t border-border/30">
-        {/* Description */}
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Description</label>
-          <Input
-            type="text"
-            value={description}
-            onChange={(e) => updateField("description", e.target.value)}
-            className="h-8 text-sm"
-            placeholder="Enter description..."
-          />
-        </div>
+      {/* Row 2: Description, Action By, Completion Date - Only show for forms with extended fields */}
+      {showExtendedFields && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 pt-3 border-t border-border/30">
+          {/* Description */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Description</label>
+            <Input
+              type="text"
+              value={description}
+              onChange={(e) => updateField("description", e.target.value)}
+              className="h-8 text-sm"
+              placeholder="Enter description..."
+            />
+          </div>
 
-        {/* Action By */}
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Action By</label>
-          <Input
-            type="text"
-            value={actionBy}
-            onChange={(e) => updateField("actionBy", e.target.value)}
-            className="h-8 text-sm"
-            placeholder="Person name..."
-          />
-        </div>
+          {/* Action By */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Action By</label>
+            <Input
+              type="text"
+              value={actionBy}
+              onChange={(e) => updateField("actionBy", e.target.value)}
+              className="h-8 text-sm"
+              placeholder="Person name..."
+            />
+          </div>
 
-        {/* Completion Date */}
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Completion Date</label>
-          <Popover open={dateOpen} onOpenChange={setDateOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full h-8 justify-start text-left font-normal text-sm",
-                  !completionDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                {completionDate ? format(new Date(completionDate), "MMM dd, yyyy") : "Pick a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={completionDate ? new Date(completionDate) : undefined}
-                onSelect={(date) => {
-                  updateField("completionDate", date ? format(date, "yyyy-MM-dd") : null);
-                  setDateOpen(false);
-                }}
-                initialFocus
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
+          {/* Completion Date */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Completion Date</label>
+            <Popover open={dateOpen} onOpenChange={setDateOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full h-8 justify-start text-left font-normal text-sm",
+                    !completionDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                  {completionDate ? format(new Date(completionDate), "MMM dd, yyyy") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={completionDate ? new Date(completionDate) : undefined}
+                  onSelect={(date) => {
+                    updateField("completionDate", date ? format(date, "yyyy-MM-dd") : null);
+                    setDateOpen(false);
+                  }}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );

@@ -127,6 +127,7 @@ export interface FormTemplate {
   estimatedTime: string;
   sections: FormSection[];
   items: ChecklistItem[]; // Flattened for backward compatibility
+  hasExtendedFields?: boolean; // Whether to show Description, Action By, Completion Date fields
 }
 
 // Section definitions for Daily Maintenance
@@ -347,22 +348,31 @@ export const formTemplates: FormTemplate[] = [
     id: "building-exterior",
     name: "Building Inspection – Exterior",
     shortName: "Exterior",
-    description: "Weekly assessment of facade, roof, landscaping, signage, and exterior lighting",
+    description: "Weekly assessment of exterior areas, landscaping, and facilities",
     icon: Building2,
     color: "bg-secondary",
     frequency: "weekly",
     estimatedTime: "30-40 min",
     sections: [],
+    hasExtendedFields: true,
     items: [
-      { id: "facade-condition", label: "Facade condition - cracks, stains, damage", type: "ok-issue", category: "Facade", required: true },
-      { id: "windows-exterior", label: "Windows - seals, frames, cleanliness", type: "ok-issue", category: "Facade", required: true },
-      { id: "entrance-doors", label: "Entrance doors and hardware", type: "ok-issue", category: "Facade", required: true },
-      { id: "roof-condition", label: "Roof visible condition", type: "ok-issue", category: "Roof", required: true },
-      { id: "gutters-drains", label: "Gutters and drains", type: "ok-issue", category: "Roof", required: true },
-      { id: "landscaping", label: "Landscaping and grounds", type: "ok-issue", category: "Grounds", required: true },
-      { id: "parking-lot", label: "Parking lot condition", type: "ok-issue", category: "Grounds", required: true },
-      { id: "exterior-lighting", label: "Exterior lighting", type: "ok-issue", category: "Lighting", required: true },
-      { id: "signage", label: "Building signage", type: "ok-issue", category: "Signage", required: true },
+      { id: "gatehouse", label: "Gatehouse", type: "ok-issue", required: true },
+      { id: "visitor-parking", label: "Visitor Parking", type: "ok-issue", required: true },
+      { id: "lawns", label: "Lawns", type: "ok-issue", required: true },
+      { id: "flower-beds", label: "Flower Beds", type: "ok-issue", required: true },
+      { id: "fences-gates", label: "Fences & Gates", type: "ok-issue", required: true },
+      { id: "curbs-walkways", label: "Curbs & Walkways", type: "ok-issue", required: true },
+      { id: "drivelanes", label: "Drivelanes", type: "ok-issue", required: true },
+      { id: "lighting", label: "Lighting", type: "ok-issue", required: true },
+      { id: "bbq-area", label: "BBQ Area", type: "ok-issue", required: true },
+      { id: "tennis-courts", label: "Tennis Courts", type: "ok-issue", required: true },
+      { id: "cabanas", label: "Cabanas", type: "ok-issue", required: true },
+      { id: "outdoor-pool", label: "O/D Pool", type: "ok-issue", required: true },
+      { id: "playground", label: "Play Ground", type: "ok-issue", required: true },
+      { id: "garbage-pickup-areas", label: "Garbage Pick Up Areas", type: "ok-issue", required: true },
+      { id: "catch-basins", label: "Catch Basins", type: "ok-issue", required: true },
+      { id: "signs", label: "Signs", type: "ok-issue", required: true },
+      { id: "other", label: "Other", type: "ok-issue", required: false },
     ],
   },
   {
@@ -375,6 +385,7 @@ export const formTemplates: FormTemplate[] = [
     frequency: "weekly",
     estimatedTime: "15-20 min",
     sections: [],
+    hasExtendedFields: true,
     items: [
       { id: "garage-door", label: "Garage Door", type: "ok-issue", required: true },
       { id: "drive-lanes", label: "Drive Lanes", type: "ok-issue", required: true },
@@ -431,21 +442,48 @@ export const formTemplates: FormTemplate[] = [
     ],
   },
   {
-    id: "pool-recreation",
-    name: "Pool & Recreation Center",
-    shortName: "Recreation",
-    description: "Weekly inspection of pool, gym, and recreational facilities",
+    id: "amenities",
+    name: "Building Inspection – Amenities",
+    shortName: "Amenities",
+    description: "Weekly inspection of amenities, recreation facilities, and guest suites",
     icon: Droplets,
     color: "bg-info",
     frequency: "weekly",
     estimatedTime: "25-30 min",
-    sections: [],
-    items: [
-      { id: "pool-chemistry", label: "Pool water chemistry", type: "pass-fail", category: "Pool", required: true },
-      { id: "pool-equipment", label: "Pool equipment operation", type: "ok-issue", category: "Pool", required: true },
-      { id: "gym-equipment", label: "Gym equipment condition", type: "ok-issue", category: "Gym", required: true },
-      { id: "locker-rooms", label: "Locker rooms cleanliness", type: "ok-issue", category: "Facilities", required: true },
+    hasExtendedFields: true,
+    sections: [
+      {
+        id: "amenities-main",
+        title: "Amenities",
+        items: [
+          { id: "swimming-pool", label: "Swimming Pool", type: "ok-issue", required: true },
+          { id: "whirlpool", label: "Whirlpool", type: "ok-issue", required: true },
+          { id: "change-rooms", label: "Change Rooms", type: "ok-issue", required: true },
+          { id: "showers", label: "Showers", type: "ok-issue", required: true },
+          { id: "saunas", label: "Saunas", type: "ok-issue", required: true },
+          { id: "exercise-room", label: "Exercise Room", type: "ok-issue", required: true },
+          { id: "washrooms", label: "Washrooms", type: "ok-issue", required: true },
+          { id: "party-room", label: "Party Room", type: "ok-issue", required: true },
+          { id: "card-room", label: "Card Room", type: "ok-issue", required: true },
+          { id: "kitchen", label: "Kitchen", type: "ok-issue", required: true },
+          { id: "billiard-room", label: "Billiard Room", type: "ok-issue", required: true },
+          { id: "squash-courts", label: "Squash Courts", type: "ok-issue", required: true },
+          { id: "mechanical-rooms", label: "Mechanical Rooms", type: "ok-issue", required: true },
+          { id: "floors", label: "Floors", type: "ok-issue", required: true },
+          { id: "furniture", label: "Furniture", type: "ok-issue", required: true },
+        ]
+      },
+      {
+        id: "guest-suites",
+        title: "Guest Suites",
+        items: [
+          { id: "guest-hardware", label: "Hardware", type: "ok-issue", required: true },
+          { id: "guest-bathroom", label: "Bathroom", type: "ok-issue", required: true },
+          { id: "guest-linens", label: "Linens", type: "ok-issue", required: true },
+        ]
+      },
     ],
+    items: [],
   },
   {
     id: "landscaping",
