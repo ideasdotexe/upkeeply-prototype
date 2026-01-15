@@ -15,7 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CheckCircle, XCircle, AlertCircle, Minus, Power, PowerOff, Lock, Unlock, Trash2, CalendarIcon } from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, Power, PowerOff, Lock, Unlock, Trash2, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChecklistItem as ChecklistItemType } from "@/lib/formTemplates";
 import { format } from "date-fns";
@@ -36,8 +36,6 @@ interface ChecklistItemProps {
   item: ChecklistItemType;
   value: ExtendedValue | null;
   onChange: (value: ExtendedValue | null) => void;
-  note?: string;
-  onNoteChange?: (note: string) => void;
   onRemove?: () => void;
   canRemove?: boolean;
 }
@@ -46,12 +44,9 @@ export function ChecklistItem({
   item,
   value,
   onChange,
-  note,
-  onNoteChange,
   onRemove,
   canRemove = false,
 }: ChecklistItemProps) {
-  const [showNote, setShowNote] = useState(!!note);
   const [dateOpen, setDateOpen] = useState(false);
 
   // Extract extended values with defaults
@@ -303,19 +298,6 @@ export function ChecklistItem({
         <div className="flex items-center gap-2">
           {renderMainInput()}
           
-          {item.type !== "textarea" && (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-              onClick={() => setShowNote(!showNote)}
-              title={showNote ? "Hide note" : "Add note"}
-            >
-              <Minus className={cn("h-3.5 w-3.5 transition-transform", showNote && "rotate-0", !showNote && "rotate-90")} />
-            </Button>
-          )}
-          
           {canRemove && onRemove && (
             <Button
               type="button"
@@ -389,17 +371,6 @@ export function ChecklistItem({
         </div>
       </div>
 
-      {/* Note Field */}
-      {showNote && item.type !== "textarea" && (
-        <div className="mt-3 pt-3 border-t border-border/30">
-          <Textarea
-            value={note || ""}
-            onChange={(e) => onNoteChange?.(e.target.value)}
-            className="min-h-[50px] resize-none text-sm"
-            placeholder="Add a note..."
-          />
-        </div>
-      )}
     </div>
   );
 }

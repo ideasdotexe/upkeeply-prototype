@@ -194,15 +194,6 @@ export default function FormPage() {
     }));
   }, []);
 
-  const handleNoteChange = useCallback((itemId: string, note: string) => {
-    setResponses((prev) => ({
-      ...prev,
-      [itemId]: {
-        ...prev[itemId],
-        note,
-      },
-    }));
-  }, []);
 
   // Show delete confirmation dialog
   const handleRemoveItemClick = useCallback((sectionId: string, itemId: string, isCustom: boolean, label: string) => {
@@ -677,8 +668,6 @@ export default function FormPage() {
                             item={item}
                             value={responses[item.id]?.value ?? null}
                             onChange={(value) => handleValueChange(item.id, value)}
-                            note={responses[item.id]?.note}
-                            onNoteChange={(note) => handleNoteChange(item.id, note)}
                             canRemove={true}
                             onRemove={() => handleRemoveItemClick(section.id, item.id, !!item.isCustom, item.label)}
                           />
