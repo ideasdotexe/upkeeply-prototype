@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import usersData from "@/lib/users.json";
 
 type LoginStep = "company" | "credentials";
 
@@ -24,7 +24,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleCompanySubmit = async (e: React.FormEvent) => {
+  const handleCompanySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!companyId.trim()) {
@@ -32,40 +32,21 @@ const Login = () => {
       return;
     }
 
-    setIsLoading(true);
-    
-    try {
-      // Validate Company ID exists in database
-      const { data: companyExists, error } = await supabase
-        .from("users")
-        .select("company_id")
-        .eq("company_id", companyId.trim().toLowerCase())
-        .limit(1);
+    // Validate Company ID exists in JSON data
+    const companyExists = usersData.some(
+      user => user.company_id === companyId.trim().toLowerCase()
+    );
 
-      if (error) {
-        console.error("Company validation error:", error);
-        toast.error("An error occurred. Please try again.");
-        setIsLoading(false);
-        return;
-      }
-
-      if (!companyExists || companyExists.length === 0) {
-        toast.error("Invalid Company ID. Please check and try again.");
-        setIsLoading(false);
-        return;
-      }
-
-      // Move to credentials step
-      setStep("credentials");
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      toast.error("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+    if (!companyExists) {
+      toast.error("Invalid Company ID. Please check and try again.");
+      return;
     }
+
+    // Move to credentials step
+    setStep("credentials");
   };
 
-  const handleCredentialsSubmit = async (e: React.FormEvent) => {
+  const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!buildingId.trim() || !username.trim() || !password) {
@@ -73,51 +54,32 @@ const Login = () => {
       return;
     }
 
-    setIsLoading(true);
-    
-    try {
-      // Query the users table to validate credentials
-      const { data: user, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("company_id", companyId.trim().toLowerCase())
-        .eq("building_id", buildingId.trim().toLowerCase())
-        .eq("username", username.trim().toLowerCase())
-        .eq("password_hash", password)
-        .maybeSingle();
+    // Find user in JSON data
+    const user = usersData.find(
+      u => u.company_id === companyId.trim().toLowerCase() &&
+           u.building_id === buildingId.trim().toLowerCase() &&
+           u.username === username.trim().toLowerCase() &&
+           u.password === password
+    );
 
-      if (error) {
-        console.error("Login error:", error);
-        toast.error("An error occurred during login. Please try again.");
-        setIsLoading(false);
-        return;
-      }
-
-      if (!user) {
-        toast.error("Invalid credentials. Please check your Company ID, Building ID, username, and password.");
-        setIsLoading(false);
-        return;
-      }
-
-      // Successful login - store user info
-      localStorage.setItem("loginInfo", JSON.stringify({
-        companyId: user.company_id,
-        buildingId: user.building_id,
-        username: user.username,
-        fullName: user.full_name,
-        designation: user.designation,
-        email: user.email,
-        userId: user.id
-      }));
-      
-      toast.success(`Welcome back, ${user.username}!`);
-      navigate("/dashboard");
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      toast.error("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+    if (!user) {
+      toast.error("Invalid credentials. Please check your Company ID, Building ID, username, and password.");
+      return;
     }
+
+    // Successful login - store user info
+    localStorage.setItem("loginInfo", JSON.stringify({
+      companyId: user.company_id,
+      buildingId: user.building_id,
+      username: user.username,
+      fullName: user.full_name,
+      designation: user.designation,
+      email: user.email,
+      userId: user.id
+    }));
+    
+    toast.success(`Welcome back, ${user.full_name}!`);
+    navigate("/dashboard");
   };
 
   const handleBack = () => {
