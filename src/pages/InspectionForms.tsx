@@ -90,13 +90,11 @@ export default function InspectionForms() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {displayedForms.map((template, index) => (
+                {displayedForms.map((template) => (
                   <FormCard
                     key={template.id}
                     template={template}
                     onClick={() => navigate(`/form/${template.id}`)}
-                    className="animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` } as React.CSSProperties}
                   />
                 ))}
               </div>
