@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { ChecklistItem } from "@/components/ChecklistItem";
@@ -65,6 +65,7 @@ import {
 } from "lucide-react";
 import { getFormTemplate, FormSection, ChecklistItem as ChecklistItemType, ChecklistItemType as ItemType, itemTemplateLibrary, ItemTemplate } from "@/lib/formTemplates";
 import { addIssue } from "@/lib/issuesStore";
+import { loadTemplateCustomization, saveTemplateCustomization, CustomItemData, customDataToChecklistItem } from "@/lib/formTemplateStore";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -105,6 +106,7 @@ export default function FormPage() {
   const [customSections, setCustomSections] = useState<CustomSection[]>([]);
   const [removedItems, setRemovedItems] = useState<RemovedItems>({});
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [templateLoaded, setTemplateLoaded] = useState(false);
   
   // Add item dialog state
   const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
@@ -118,6 +120,67 @@ export default function FormPage() {
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ sectionId: string; itemId: string; isCustom: boolean; label: string } | null>(null);
+
+  // Load saved template customization on mount
+  useEffect(() => {
+    if (!formId || templateLoaded) return;
+    
+    const saved = loadTemplateCustomization(formId);
+    if (saved) {
+      // Convert saved custom items to CustomSection format
+      const sections: CustomSection[] = [];
+      Object.entries(saved.customItems).forEach(([sectionId, items]) => {
+        if (items.length > 0) {
+          const templateSection = template?.sections.find(s => s.id === sectionId);
+          sections.push({
+            id: sectionId,
+            title: templateSection?.title || sectionId,
+            items: items.map(item => ({
+              ...customDataToChecklistItem(item),
+              isCustom: true,
+            })),
+          });
+        }
+      });
+      setCustomSections(sections);
+      
+      // Convert saved removed items to Set format
+      const removed: RemovedItems = {};
+      Object.entries(saved.removedItems).forEach(([sectionId, itemIds]) => {
+        removed[sectionId] = new Set(itemIds);
+      });
+      setRemovedItems(removed);
+    }
+    setTemplateLoaded(true);
+  }, [formId, template, templateLoaded]);
+
+  // Save template customization whenever custom items or removed items change
+  useEffect(() => {
+    if (!formId || !templateLoaded) return;
+    
+    // Convert customSections to storage format
+    const customItems: Record<string, CustomItemData[]> = {};
+    customSections.forEach(section => {
+      customItems[section.id] = section.items.map(item => ({
+        id: item.id,
+        label: item.label,
+        type: item.type,
+        required: item.required || false,
+        unit: item.unit,
+        toggleType: item.toggleType,
+        identifierLabel: item.identifierLabel,
+        selectOptions: item.selectOptions,
+      }));
+    });
+    
+    // Convert removedItems Sets to arrays
+    const removedItemsArray: Record<string, string[]> = {};
+    Object.entries(removedItems).forEach(([sectionId, itemSet]) => {
+      removedItemsArray[sectionId] = Array.from(itemSet);
+    });
+    
+    saveTemplateCustomization(formId, customItems, removedItemsArray);
+  }, [formId, customSections, removedItems, templateLoaded]);
 
   // Merge template sections with custom sections and filter removed items
   const allSections = useMemo(() => {
