@@ -1,1 +1,10 @@
 project_id = "cziccmlndxxizqxfeadb"
+
+[functions.authenticate]
+verify_jwt = false
+
+[functions.validate-company]
+verify_jwt = false
+
+[functions.get-building-info]
+verify_jwt = false

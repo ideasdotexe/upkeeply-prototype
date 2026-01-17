@@ -6,9 +6,26 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
-import usersData from "@/lib/users.json";
+import { supabase } from "@/integrations/supabase/client";
 
 type LoginStep = "company" | "credentials";
+
+// Input validation functions
+function validateCompanyId(companyId: string): boolean {
+  return companyId.length > 0 && companyId.length <= 100 && /^[a-zA-Z0-9\s\-_.]+$/.test(companyId);
+}
+
+function validateBuildingId(buildingId: string): boolean {
+  return buildingId.length > 0 && buildingId.length <= 100 && /^[a-zA-Z0-9\s\-_.]+$/.test(buildingId);
+}
+
+function validateUsername(username: string): boolean {
+  return username.length > 0 && username.length <= 100;
+}
+
+function validatePassword(password: string): boolean {
+  return password.length > 0 && password.length <= 100;
+}
 
 const Login = () => {
   const navigate = useNavigate();
@@ -24,62 +41,121 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleCompanySubmit = (e: React.FormEvent) => {
+  const handleCompanySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!companyId.trim()) {
+    const trimmedCompanyId = companyId.trim();
+    
+    if (!trimmedCompanyId) {
       toast.error("Please enter your Company ID");
       return;
     }
 
-    // Validate Company ID exists in JSON data
-    const companyExists = usersData.some(
-      user => user.company_id === companyId.trim().toLowerCase()
-    );
-
-    if (!companyExists) {
-      toast.error("Invalid Company ID. Please check and try again.");
+    if (!validateCompanyId(trimmedCompanyId)) {
+      toast.error("Invalid Company ID format");
       return;
     }
 
-    // Move to credentials step
-    setStep("credentials");
+    setIsLoading(true);
+
+    try {
+      // Validate company ID via secure Edge Function
+      const { data, error } = await supabase.functions.invoke("validate-company", {
+        body: { companyId: trimmedCompanyId },
+      });
+
+      if (error) {
+        console.error("Company validation error:", error);
+        toast.error("Unable to validate Company ID. Please try again.");
+        return;
+      }
+
+      if (!data?.valid) {
+        toast.error("Invalid Company ID. Please check and try again.");
+        return;
+      }
+
+      // Move to credentials step
+      setStep("credentials");
+    } catch (err) {
+      console.error("Unexpected error during company validation:", err);
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleCredentialsSubmit = (e: React.FormEvent) => {
+  const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!buildingId.trim() || !username.trim() || !password) {
+    const trimmedBuildingId = buildingId.trim();
+    const trimmedUsername = username.trim();
+    
+    if (!trimmedBuildingId || !trimmedUsername || !password) {
       toast.error("Please fill in all fields");
       return;
     }
 
-    // Find user in JSON data
-    const user = usersData.find(
-      u => u.company_id === companyId.trim().toLowerCase() &&
-           u.building_id === buildingId.trim().toLowerCase() &&
-           u.username === username.trim().toLowerCase() &&
-           u.password === password
-    );
-
-    if (!user) {
-      toast.error("Invalid credentials. Please check your Company ID, Building ID, username, and password.");
+    // Validate inputs
+    if (!validateBuildingId(trimmedBuildingId)) {
+      toast.error("Invalid Building ID format");
       return;
     }
 
-    // Successful login - store user info
-    localStorage.setItem("loginInfo", JSON.stringify({
-      companyId: user.company_id,
-      buildingId: user.building_id,
-      username: user.username,
-      fullName: user.full_name,
-      designation: user.designation,
-      email: user.email,
-      userId: user.id
-    }));
-    
-    toast.success(`Welcome back, ${user.full_name}!`);
-    navigate("/dashboard");
+    if (!validateUsername(trimmedUsername)) {
+      toast.error("Invalid username format");
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      toast.error("Invalid password format");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Authenticate via secure Edge Function
+      const { data, error } = await supabase.functions.invoke("authenticate", {
+        body: {
+          companyId: companyId.trim(),
+          buildingId: trimmedBuildingId,
+          username: trimmedUsername,
+          password: password,
+        },
+      });
+
+      if (error) {
+        console.error("Authentication error:", error);
+        toast.error("Authentication failed. Please try again.");
+        return;
+      }
+
+      if (!data?.success) {
+        toast.error(data?.message || "Invalid credentials. Please check your details and try again.");
+        return;
+      }
+
+      // Successful login - store user info (no sensitive data)
+      localStorage.setItem("loginInfo", JSON.stringify({
+        companyId: data.user.companyId,
+        buildingId: data.user.buildingId,
+        username: data.user.username,
+        fullName: data.user.fullName,
+        designation: data.user.designation,
+        email: data.user.email,
+        userId: data.user.id,
+        sessionToken: data.sessionToken,
+      }));
+      
+      toast.success(`Welcome back, ${data.user.fullName || data.user.username}!`);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Unexpected error during authentication:", err);
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -115,6 +191,7 @@ const Login = () => {
                     onChange={(e) => setCompanyId(e.target.value)}
                     autoComplete="organization"
                     className="h-12"
+                    maxLength={100}
                   />
                 </div>
 
@@ -149,6 +226,7 @@ const Login = () => {
                     value={buildingId}
                     onChange={(e) => setBuildingId(e.target.value)}
                     className="h-12"
+                    maxLength={100}
                   />
                 </div>
 
@@ -162,6 +240,7 @@ const Login = () => {
                     onChange={(e) => setUsername(e.target.value)}
                     autoComplete="username"
                     className="h-12"
+                    maxLength={100}
                   />
                 </div>
 
@@ -176,6 +255,7 @@ const Login = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       autoComplete="current-password"
                       className="h-12 pr-10"
+                      maxLength={100}
                     />
                     <button
                       type="button"

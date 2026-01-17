@@ -38,14 +38,32 @@ function getLoginInfo(): LoginInfo {
 async function getBuildingInfo(buildingId: string): Promise<BuildingInfo | null> {
   if (!buildingId) return null;
   
-  const { data, error } = await supabase
-    .from("buildings")
-    .select("name, address, building_type, year_built, units, floors, parking_spots, amenities")
-    .eq("building_id", buildingId.toLowerCase())
-    .maybeSingle();
+  // Validate building ID format before making request
+  if (buildingId.length > 100 || !/^[a-zA-Z0-9\s\-_.]+$/.test(buildingId)) {
+    console.error("Invalid building ID format");
+    return null;
+  }
   
-  if (error || !data) return null;
-  return data;
+  try {
+    // Use secure Edge Function to fetch building info
+    const { data, error } = await supabase.functions.invoke("get-building-info", {
+      body: { buildingId: buildingId.trim() },
+    });
+    
+    if (error) {
+      console.error("Error fetching building info:", error);
+      return null;
+    }
+    
+    if (data?.success && data?.building) {
+      return data.building;
+    }
+    
+    return null;
+  } catch (err) {
+    console.error("Unexpected error fetching building info:", err);
+    return null;
+  }
 }
 
 export async function generateInspectionPDF(inspection: CompletedInspection): Promise<void> {

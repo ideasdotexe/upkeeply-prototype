@@ -76,14 +76,28 @@ export default function Dashboard() {
   }, []);
 
   const fetchBuildingInfo = async (buildingId: string) => {
-    const { data, error } = await supabase
-      .from("buildings")
-      .select("name, address, building_type, year_built, units, floors, parking_spots, amenities")
-      .eq("building_id", buildingId.toLowerCase())
-      .maybeSingle();
-    
-    if (data && !error) {
-      setBuildingInfo(data);
+    // Validate building ID format before making request
+    if (!buildingId || buildingId.length > 100 || !/^[a-zA-Z0-9\s\-_.]+$/.test(buildingId)) {
+      console.error("Invalid building ID format");
+      return;
+    }
+
+    try {
+      // Use secure Edge Function to fetch building info
+      const { data, error } = await supabase.functions.invoke("get-building-info", {
+        body: { buildingId: buildingId.trim() },
+      });
+      
+      if (error) {
+        console.error("Error fetching building info:", error);
+        return;
+      }
+      
+      if (data?.success && data?.building) {
+        setBuildingInfo(data.building);
+      }
+    } catch (err) {
+      console.error("Unexpected error fetching building info:", err);
     }
   };
 
