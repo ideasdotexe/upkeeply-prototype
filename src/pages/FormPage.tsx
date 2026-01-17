@@ -61,11 +61,12 @@ import {
   Building2,
   Plus,
   Check,
-  ChevronsUpDown
+  ChevronsUpDown,
+  RotateCcw
 } from "lucide-react";
 import { getFormTemplate, FormSection, ChecklistItem as ChecklistItemType, ChecklistItemType as ItemType, itemTemplateLibrary, ItemTemplate } from "@/lib/formTemplates";
 import { addIssue } from "@/lib/issuesStore";
-import { loadTemplateCustomization, saveTemplateCustomization, CustomItemData, customDataToChecklistItem } from "@/lib/formTemplateStore";
+import { loadTemplateCustomization, saveTemplateCustomization, clearTemplateCustomization, CustomItemData, customDataToChecklistItem } from "@/lib/formTemplateStore";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -120,6 +121,9 @@ export default function FormPage() {
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ sectionId: string; itemId: string; isCustom: boolean; label: string } | null>(null);
+  
+  // Reset template confirmation dialog state
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   // Load saved template customization on mount
   useEffect(() => {
@@ -312,6 +316,17 @@ export default function FormPage() {
     setItemToDelete(null);
     toast.success("Item removed");
   }, [itemToDelete]);
+
+  // Reset template to default
+  const handleResetTemplate = useCallback(() => {
+    if (!formId) return;
+    
+    clearTemplateCustomization(formId);
+    setCustomSections([]);
+    setRemovedItems({});
+    setResetDialogOpen(false);
+    toast.success("Template reset to default");
+  }, [formId]);
 
   // Handle template selection
   const handleTemplateSelect = useCallback((tmpl: ItemTemplate) => {
@@ -537,9 +552,25 @@ export default function FormPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Form */}
           <div className="lg:col-span-3 space-y-4">
-            {/* Add Item Button */}
-            <div className="flex justify-end">
+            {/* Template Actions */}
+            <div className="flex justify-between items-center">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2 text-muted-foreground hover:text-foreground"
+                onClick={() => setResetDialogOpen(true)}
+                disabled={customSections.length === 0 && Object.keys(removedItems).length === 0}
+              >
+                <RotateCcw className="h-4 w-4" />
+                Reset to Default
+              </Button>
               <Dialog open={addItemDialogOpen} onOpenChange={setAddItemDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Item
+                  </Button>
+                </DialogTrigger>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2">
                     <Plus className="h-4 w-4" />
@@ -831,6 +862,22 @@ export default function FormPage() {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setItemToDelete(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Template Confirmation Dialog */}
+      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset to Default Template</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will restore all removed items and remove all custom items you've added. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetTemplate}>Reset Template</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
