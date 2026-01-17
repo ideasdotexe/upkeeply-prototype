@@ -51,7 +51,7 @@ export default function Issues() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 overflow-hidden">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -123,7 +123,7 @@ export default function Issues() {
                             <h3 className="font-semibold text-lg break-words">{issue.title}</h3>
                           </div>
                           
-                          <p className="text-muted-foreground break-words">{issue.description}</p>
+                          <p className="text-muted-foreground break-all whitespace-pre-wrap">{issue.description}</p>
                           
                           <div className="flex flex-wrap gap-4 text-sm">
                             <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -158,7 +158,7 @@ export default function Issues() {
                         </div>
 
                         {/* Action button */}
-                        <div className="flex lg:flex-col gap-2">
+                        <div className="flex lg:flex-col gap-2 shrink-0">
                           {issue.status === "open" ? (
                             <Button 
                               onClick={() => handleResolve(issue.id)}
