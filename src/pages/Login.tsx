@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 type LoginStep = "company" | "credentials";
 
@@ -45,20 +46,48 @@ const Login = () => {
 
     setIsLoading(true);
     
-    // Simulate login delay for demo purposes
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Demo login - accepts any credentials
-    // Store login info for PDF generation
-    localStorage.setItem("loginInfo", JSON.stringify({
-      companyId,
-      buildingId,
-      username
-    }));
-    toast.success("Welcome back!");
-    navigate("/dashboard");
-    
-    setIsLoading(false);
+    try {
+      // Query the users table to validate credentials
+      const { data: user, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("company_id", companyId.trim())
+        .eq("building_id", buildingId.trim())
+        .eq("username", username.trim())
+        .eq("password_hash", password)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Login error:", error);
+        toast.error("An error occurred during login. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!user) {
+        toast.error("Invalid credentials. Please check your Company ID, Building ID, username, and password.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Successful login - store user info
+      localStorage.setItem("loginInfo", JSON.stringify({
+        companyId: user.company_id,
+        buildingId: user.building_id,
+        username: user.username,
+        designation: user.designation,
+        email: user.email,
+        userId: user.id
+      }));
+      
+      toast.success(`Welcome back, ${user.username}!`);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -101,17 +130,10 @@ const Login = () => {
                   type="submit" 
                   className="w-full h-12 text-base gap-2"
                 >
-                  Log In
+                  Continue
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </form>
-
-              {/* Demo Notice */}
-              <div className="mt-6 p-3 bg-muted/50 rounded-lg text-center">
-                <p className="text-xs text-muted-foreground">
-                  <strong>Demo Mode:</strong> Enter any Company ID to continue
-                </p>
-              </div>
             </CardContent>
           </Card>
         ) : (
@@ -195,13 +217,6 @@ const Login = () => {
                   <ArrowLeft className="h-4 w-4" />
                   Back to Company ID
                 </Button>
-              </div>
-
-              {/* Demo Notice */}
-              <div className="mt-4 p-3 bg-muted/50 rounded-lg text-center">
-                <p className="text-xs text-muted-foreground">
-                  <strong>Demo Mode:</strong> Enter any credentials to continue
-                </p>
               </div>
             </CardContent>
           </Card>
