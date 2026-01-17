@@ -39,7 +39,7 @@ const Login = () => {
       const { data: companyExists, error } = await supabase
         .from("users")
         .select("company_id")
-        .eq("company_id", companyId.trim())
+        .eq("company_id", companyId.trim().toLowerCase())
         .limit(1);
 
       if (error) {
@@ -80,9 +80,9 @@ const Login = () => {
       const { data: user, error } = await supabase
         .from("users")
         .select("*")
-        .eq("company_id", companyId.trim())
-        .eq("building_id", buildingId.trim())
-        .eq("username", username.trim())
+        .eq("company_id", companyId.trim().toLowerCase())
+        .eq("building_id", buildingId.trim().toLowerCase())
+        .eq("username", username.trim().toLowerCase())
         .eq("password_hash", password)
         .maybeSingle();
 
