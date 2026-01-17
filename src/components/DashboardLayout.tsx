@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { 
@@ -29,13 +29,27 @@ const navItems = [
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [userInfo, setUserInfo] = useState<{ fullName?: string; designation?: string } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
 
+  useEffect(() => {
+    const loginInfo = localStorage.getItem("loginInfo");
+    if (loginInfo) {
+      setUserInfo(JSON.parse(loginInfo));
+    }
+  }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem("loginInfo");
+    navigate("/login");
+  };
+
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
+
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -113,8 +127,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">John Smith</p>
-                <p className="text-xs text-sidebar-foreground/60 truncate">Superintendent</p>
+                <p className="text-sm font-medium truncate">{userInfo?.fullName || "User"}</p>
+                <p className="text-xs text-sidebar-foreground/60 truncate">{userInfo?.designation || "Staff"}</p>
               </div>
             )}
           </div>
@@ -124,7 +138,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               "w-full justify-start gap-3 h-10 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               collapsed ? "px-3 justify-center" : "px-4"
             )}
-            onClick={() => navigate("/login")}
+            onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4" />
             {!collapsed && <span>Sign Out</span>}
