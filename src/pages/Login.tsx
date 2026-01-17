@@ -125,9 +125,16 @@ const Login = () => {
         },
       });
 
+      // Handle edge function errors (including 401 responses)
       if (error) {
         console.error("Authentication error:", error);
-        toast.error("Authentication failed. Please try again.");
+        // Check if error contains response data with a message
+        const errorMessage = error.message || "Authentication failed. Please try again.";
+        if (errorMessage.includes("Invalid credentials") || errorMessage.includes("401")) {
+          toast.error("Invalid credentials. Please check your details and try again.");
+        } else {
+          toast.error(errorMessage);
+        }
         return;
       }
 
