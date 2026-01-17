@@ -18,6 +18,18 @@ import {
 import { formTemplates, getFormsByFrequency } from "@/lib/formTemplates";
 import { getOpenIssuesCount } from "@/lib/issuesStore";
 import { getInspections, CompletedInspection } from "@/lib/inspectionsStore";
+import { supabase } from "@/integrations/supabase/client";
+
+interface BuildingInfo {
+  name: string;
+  address: string;
+  building_type: string;
+  year_built: number | null;
+  units: number;
+  floors: number;
+  parking_spots: number;
+  amenities: string;
+}
 
 // Format inspection date for display
 function formatInspectionDate(dateStr: string): string {
@@ -45,6 +57,7 @@ export default function Dashboard() {
   const [openIssuesCount, setOpenIssuesCount] = useState(0);
   const [recentInspections, setRecentInspections] = useState<CompletedInspection[]>([]);
   const [userInfo, setUserInfo] = useState<{ fullName?: string; buildingId?: string } | null>(null);
+  const [buildingInfo, setBuildingInfo] = useState<BuildingInfo | null>(null);
 
   useEffect(() => {
     setOpenIssuesCount(getOpenIssuesCount());
@@ -52,9 +65,27 @@ export default function Dashboard() {
     
     const loginInfo = localStorage.getItem("loginInfo");
     if (loginInfo) {
-      setUserInfo(JSON.parse(loginInfo));
+      const parsed = JSON.parse(loginInfo);
+      setUserInfo(parsed);
+      
+      // Fetch building info from database
+      if (parsed.buildingId) {
+        fetchBuildingInfo(parsed.buildingId);
+      }
     }
   }, []);
+
+  const fetchBuildingInfo = async (buildingId: string) => {
+    const { data, error } = await supabase
+      .from("buildings")
+      .select("name, address, building_type, year_built, units, floors, parking_spots, amenities")
+      .eq("building_id", buildingId.toLowerCase())
+      .single();
+    
+    if (data && !error) {
+      setBuildingInfo(data);
+    }
+  };
 
   const dailyForms = getFormsByFrequency("daily");
   const weeklyForms = getFormsByFrequency("weekly");
@@ -148,8 +179,10 @@ export default function Dashboard() {
                     <Building2 className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">123 Main Street</CardTitle>
-                    <p className="text-xs text-muted-foreground">Residential · Built 2005</p>
+                    <CardTitle className="text-base">{buildingInfo?.name || userInfo?.buildingId || "Building"}</CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      {buildingInfo?.building_type || "Residential"} · Built {buildingInfo?.year_built || "N/A"}
+                    </p>
                   </div>
                 </div>
               </CardHeader>
@@ -157,19 +190,19 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-muted-foreground text-xs">Units</p>
-                    <p className="font-medium">48</p>
+                    <p className="font-medium">{buildingInfo?.units || 0}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Floors</p>
-                    <p className="font-medium">12</p>
+                    <p className="font-medium">{buildingInfo?.floors || 0}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Parking Spots</p>
-                    <p className="font-medium">72</p>
+                    <p className="font-medium">{buildingInfo?.parking_spots || 0}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Amenities</p>
-                    <p className="font-medium">Pool, Gym</p>
+                    <p className="font-medium">{buildingInfo?.amenities || "None"}</p>
                   </div>
                 </div>
               </CardContent>
