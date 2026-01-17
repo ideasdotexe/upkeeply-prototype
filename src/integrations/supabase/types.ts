@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      buildings: {
+        Row: {
+          address: string | null
+          amenities: string | null
+          building_id: string
+          building_type: string | null
+          created_at: string
+          floors: number | null
+          id: string
+          name: string
+          parking_spots: number | null
+          units: number | null
+          updated_at: string
+          year_built: number | null
+        }
+        Insert: {
+          address?: string | null
+          amenities?: string | null
+          building_id: string
+          building_type?: string | null
+          created_at?: string
+          floors?: number | null
+          id?: string
+          name: string
+          parking_spots?: number | null
+          units?: number | null
+          updated_at?: string
+          year_built?: number | null
+        }
+        Update: {
+          address?: string | null
+          amenities?: string | null
+          building_id?: string
+          building_type?: string | null
+          created_at?: string
+          floors?: number | null
+          id?: string
+          name?: string
+          parking_spots?: number | null
+          units?: number | null
+          updated_at?: string
+          year_built?: number | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           building_id: string
