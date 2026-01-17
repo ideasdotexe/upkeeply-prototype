@@ -335,8 +335,8 @@ const flattenSections = (sections: FormSection[]): ChecklistItem[] => {
 export const formTemplates: FormTemplate[] = [
   {
     id: "daily-maintenance",
-    name: "Daily Maintenance Inspection",
-    shortName: "Daily Maintenance",
+    name: "Daily Inspection",
+    shortName: "Daily",
     description: "Comprehensive daily walkthrough covering parking, roof, boiler room, and mechanical systems",
     icon: ClipboardCheck,
     color: "bg-primary",

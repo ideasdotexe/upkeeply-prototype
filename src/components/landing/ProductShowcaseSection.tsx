@@ -29,7 +29,7 @@ const ProductShowcaseSection = () => {
                 <div className="w-3 h-3 rounded-full bg-primary-foreground/20" />
               </div>
               <span className="text-primary-foreground font-medium text-sm">
-                Daily Maintenance Inspection
+                Daily Inspection
               </span>
             </div>
 

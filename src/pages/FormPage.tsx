@@ -60,7 +60,6 @@ import {
   AlertCircle,
   Building2,
   Plus,
-  ChevronDown,
   Check,
   ChevronsUpDown
 } from "lucide-react";
@@ -190,6 +189,16 @@ export default function FormPage() {
       [itemId]: {
         ...prev[itemId],
         value,
+      },
+    }));
+  }, []);
+
+  const handleNoteChange = useCallback((itemId: string, note: string) => {
+    setResponses((prev) => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        note,
       },
     }));
   }, []);
@@ -638,7 +647,7 @@ export default function FormPage() {
                     value={section.id}
                     className="border rounded-lg bg-card overflow-hidden"
                   >
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/50 [&[data-state=open]>div>.chevron]:rotate-180">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/50">
                       <div className="flex items-center justify-between flex-1 pr-2">
                         <div className="flex items-center gap-3">
                           <span className="font-medium text-foreground">{section.title}</span>
@@ -656,7 +665,6 @@ export default function FormPage() {
                           {sectionProgress === 100 && sectionRequired.length > 0 && (
                             <CheckCircle2 className="h-4 w-4 text-success" />
                           )}
-                          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 chevron" />
                         </div>
                       </div>
                     </AccordionTrigger>
@@ -668,6 +676,8 @@ export default function FormPage() {
                             item={item}
                             value={responses[item.id]?.value ?? null}
                             onChange={(value) => handleValueChange(item.id, value)}
+                            note={responses[item.id]?.note ?? ""}
+                            onNoteChange={(note) => handleNoteChange(item.id, note)}
                             canRemove={true}
                             onRemove={() => handleRemoveItemClick(section.id, item.id, !!item.isCustom, item.label)}
                             showExtendedFields={template?.hasExtendedFields}
