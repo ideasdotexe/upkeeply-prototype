@@ -571,12 +571,6 @@ export default function FormPage() {
                     Add Item
                   </Button>
                 </DialogTrigger>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Item
-                  </Button>
-                </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle>Add Item</DialogTitle>
