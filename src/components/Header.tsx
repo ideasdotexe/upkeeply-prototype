@@ -1,4 +1,6 @@
-import { Building2, Menu, Bell, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Menu, Bell, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,6 +17,20 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
+  const navigate = useNavigate();
+  const [userInfo, setUserInfo] = useState<{ fullName?: string; designation?: string } | null>(null);
+
+  useEffect(() => {
+    const loginInfo = localStorage.getItem("loginInfo");
+    if (loginInfo) {
+      setUserInfo(JSON.parse(loginInfo));
+    }
+  }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem("loginInfo");
+    navigate("/login");
+  };
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -56,8 +72,8 @@ export function Header({ onMenuClick }: HeaderProps) {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">John Smith</p>
-                  <p className="text-xs text-muted-foreground">Superintendent</p>
+                  <p className="text-sm font-medium">{userInfo?.fullName || "User"}</p>
+                  <p className="text-xs text-muted-foreground">{userInfo?.designation || "Staff"}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -65,7 +81,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               <DropdownMenuItem>Building Info</DropdownMenuItem>
               <DropdownMenuItem>Form Templates</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Sign Out</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive" onClick={handleSignOut}>Sign Out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
