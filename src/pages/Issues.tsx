@@ -111,19 +111,19 @@ export default function Issues() {
             ) : (
               <div className="space-y-4">
                 {displayedIssues.map((issue) => (
-                  <Card key={issue.id} className="hover:shadow-card-hover transition-shadow">
+                  <Card key={issue.id} className="hover:shadow-card-hover transition-shadow overflow-hidden">
                     <CardContent className="p-6">
                       <div className="flex flex-col lg:flex-row lg:items-start gap-4">
                         {/* Issue info */}
-                        <div className="flex-1 space-y-3">
+                        <div className="flex-1 min-w-0 space-y-3">
                           <div className="flex items-start gap-3">
-                            <Badge className={getPriorityColor(issue.priority)}>
+                            <Badge className={`${getPriorityColor(issue.priority)} shrink-0`}>
                               {issue.priority}
                             </Badge>
-                            <h3 className="font-semibold text-lg">{issue.title}</h3>
+                            <h3 className="font-semibold text-lg break-words">{issue.title}</h3>
                           </div>
                           
-                          <p className="text-muted-foreground">{issue.description}</p>
+                          <p className="text-muted-foreground break-words">{issue.description}</p>
                           
                           <div className="flex flex-wrap gap-4 text-sm">
                             <div className="flex items-center gap-1.5 text-muted-foreground">
