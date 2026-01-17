@@ -31,6 +31,14 @@ function formatInspectionDate(dateStr: string): string {
   return format(date, "MMM d, yyyy");
 }
 
+// Get greeting based on current time
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
@@ -66,7 +74,7 @@ export default function Dashboard() {
         {/* Welcome Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Good morning, {userInfo?.fullName || "User"}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{getGreeting()}, {userInfo?.fullName || "User"}</h1>
             <p className="text-muted-foreground mt-1">
               Here's what needs your attention at <span className="font-medium text-foreground">{userInfo?.buildingId || "your building"}</span>
             </p>
