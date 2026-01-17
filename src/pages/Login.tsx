@@ -24,7 +24,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleCompanySubmit = (e: React.FormEvent) => {
+  const handleCompanySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!companyId.trim()) {
@@ -32,8 +32,37 @@ const Login = () => {
       return;
     }
 
-    // Move to credentials step
-    setStep("credentials");
+    setIsLoading(true);
+    
+    try {
+      // Validate Company ID exists in database
+      const { data: companyExists, error } = await supabase
+        .from("users")
+        .select("company_id")
+        .eq("company_id", companyId.trim())
+        .limit(1);
+
+      if (error) {
+        console.error("Company validation error:", error);
+        toast.error("An error occurred. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!companyExists || companyExists.length === 0) {
+        toast.error("Invalid Company ID. Please check and try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Move to credentials step
+      setStep("credentials");
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
@@ -129,9 +158,10 @@ const Login = () => {
                 <Button 
                   type="submit" 
                   className="w-full h-12 text-base gap-2"
+                  disabled={isLoading}
                 >
-                  Continue
-                  <ArrowRight className="h-4 w-4" />
+                  {isLoading ? "Validating..." : "Continue"}
+                  {!isLoading && <ArrowRight className="h-4 w-4" />}
                 </Button>
               </form>
             </CardContent>
