@@ -283,19 +283,19 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
         if (value !== undefined && value !== null && value !== "") {
           switch (item.type) {
             case "ok-issue":
-              // Handle both string values and boolean mainValue
-              if (value === "ok" || value === true) {
-                displayValue = "✓ OK";
-              } else if (value === "issue" || value === false) {
-                displayValue = "✗ ISSUE";
+              // Handle boolean values (true = OK, false = Issue)
+              if (value === true) {
+                displayValue = "OK";
+              } else if (value === false) {
+                displayValue = "ISSUE";
                 hasIssue = true;
               }
               break;
             case "pass-fail":
-              if (value === "pass" || value === true) {
-                displayValue = "✓ PASS";
-              } else if (value === "fail" || value === false) {
-                displayValue = "✗ FAIL";
+              if (value === true) {
+                displayValue = "PASS";
+              } else if (value === false) {
+                displayValue = "FAIL";
                 hasIssue = true;
               }
               break;
@@ -335,7 +335,10 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
               displayValue = String(value);
               break;
             default:
-              displayValue = String(value);
+              // For unknown types, only stringify primitives, not objects
+              if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+                displayValue = String(value);
+              }
           }
         }
       }
