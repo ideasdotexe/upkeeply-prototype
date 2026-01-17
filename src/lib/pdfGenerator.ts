@@ -245,64 +245,98 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
       const response = responses[item.id] as InspectionResponse | undefined;
       let displayValue = "-"; // Empty/not filled shows as dash
       let hasIssue = false;
+      let noteOrDescription = "";
+      let actionBy = "";
+      let completionDate = "";
       
-      if (response && response.value !== undefined && response.value !== null && response.value !== "") {
-        const value = response.value;
+      if (response) {
+        // Handle both formats: 
+        // 1. New format: { value: { mainValue: ..., description: ... }, note: ... }
+        // 2. Old format: { value: "ok" | "issue" | ..., note: ... }
+        let value: string | boolean | number | { identifier?: string; status?: boolean | null } | null = null;
         
-        switch (item.type) {
-          case "ok-issue":
-            if (value === "ok") {
-              displayValue = "✓ OK";
-            } else if (value === "issue") {
-              displayValue = "✗ ISSUE";
-              hasIssue = true;
-            }
-            break;
-          case "pass-fail":
-            if (value === "pass") {
-              displayValue = "✓ PASS";
-            } else if (value === "fail") {
-              displayValue = "✗ FAIL";
-              hasIssue = true;
-            }
-            break;
-          case "on-off":
-            if (typeof value === "boolean") {
-              displayValue = value ? "ON" : "OFF";
-            }
-            break;
-          case "open-closed":
-            if (typeof value === "boolean") {
-              displayValue = value ? "OPEN" : "CLOSED";
-            }
-            break;
-          case "combined-toggle":
-            if (typeof value === "object" && value !== null) {
-              const combined = value as { identifier?: string; status?: boolean | null };
-              const parts: string[] = [];
-              if (combined.identifier) {
-                parts.push(`#${combined.identifier}`);
+        if (response.value !== undefined && response.value !== null) {
+          const rawValue = response.value;
+          
+          // Check if it's the new ExtendedValue format with mainValue
+          if (typeof rawValue === "object" && rawValue !== null && "mainValue" in rawValue) {
+            const extendedValue = rawValue as { 
+              mainValue?: string | boolean | number | { identifier?: string; status?: boolean | null } | null;
+              description?: string;
+              actionBy?: string;
+              completionDate?: string;
+            };
+            value = extendedValue.mainValue ?? null;
+            // Get extended fields from the value object
+            noteOrDescription = extendedValue.description || response.note || "";
+            actionBy = extendedValue.actionBy || response.actionBy || "";
+            completionDate = extendedValue.completionDate || response.completionDate || "";
+          } else {
+            // Old format - value is the actual value
+            value = rawValue;
+            noteOrDescription = response.note || response.description || "";
+            actionBy = response.actionBy || "";
+            completionDate = response.completionDate || "";
+          }
+        }
+        
+        if (value !== undefined && value !== null && value !== "") {
+          switch (item.type) {
+            case "ok-issue":
+              // Handle both string values and boolean mainValue
+              if (value === "ok" || value === true) {
+                displayValue = "✓ OK";
+              } else if (value === "issue" || value === false) {
+                displayValue = "✗ ISSUE";
+                hasIssue = true;
               }
-              if (combined.status !== undefined && combined.status !== null) {
-                parts.push(combined.status ? "ON" : "OFF");
+              break;
+            case "pass-fail":
+              if (value === "pass" || value === true) {
+                displayValue = "✓ PASS";
+              } else if (value === "fail" || value === false) {
+                displayValue = "✗ FAIL";
+                hasIssue = true;
               }
-              displayValue = parts.length > 0 ? parts.join(" - ") : "-";
-            } else if (typeof value === "boolean") {
-              displayValue = value ? "ON" : "OFF";
-            }
-            break;
-          case "number":
-            displayValue = `${value}${item.unit ? ` ${item.unit}` : ""}`;
-            break;
-          case "select":
-            displayValue = String(value);
-            break;
-          case "text":
-          case "textarea":
-            displayValue = String(value);
-            break;
-          default:
-            displayValue = String(value);
+              break;
+            case "on-off":
+              if (typeof value === "boolean") {
+                displayValue = value ? "ON" : "OFF";
+              }
+              break;
+            case "open-closed":
+              if (typeof value === "boolean") {
+                displayValue = value ? "OPEN" : "CLOSED";
+              }
+              break;
+            case "combined-toggle":
+              if (typeof value === "object" && value !== null) {
+                const combined = value as { identifier?: string; status?: boolean | null };
+                const parts: string[] = [];
+                if (combined.identifier) {
+                  parts.push(`#${combined.identifier}`);
+                }
+                if (combined.status !== undefined && combined.status !== null) {
+                  parts.push(combined.status ? "ON" : "OFF");
+                }
+                displayValue = parts.length > 0 ? parts.join(" - ") : "-";
+              } else if (typeof value === "boolean") {
+                displayValue = value ? "ON" : "OFF";
+              }
+              break;
+            case "number":
+              displayValue = `${value}${item.unit ? ` ${item.unit}` : ""}`;
+              break;
+            case "select":
+              displayValue = String(value);
+              break;
+            case "text":
+            case "textarea":
+              displayValue = String(value);
+              break;
+            default:
+              displayValue = String(value);
+          }
         }
       }
       
@@ -313,9 +347,9 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
           hasIssue 
             ? { content: displayValue, styles: { fillColor: [255, 200, 200] as [number, number, number] } }
             : displayValue,
-          response?.description || "",
-          response?.actionBy || "",
-          response?.completionDate || ""
+          noteOrDescription,
+          actionBy,
+          completionDate
         ];
         tableData.push(row);
       } else {
@@ -324,7 +358,7 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
           hasIssue 
             ? { content: displayValue, styles: { fillColor: [255, 200, 200] as [number, number, number] } }
             : displayValue,
-          response?.note || ""
+          noteOrDescription
         ];
         tableData.push(row);
       }
