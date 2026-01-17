@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import * as jose from "https://deno.land/x/jose@v4.14.4/index.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,7 +9,7 @@ const corsHeaders = {
 
 interface GetBuildingRequest {
   buildingId: string;
-  sessionToken?: string;
+  sessionToken: string;
 }
 
 interface BuildingInfo {
@@ -44,11 +45,43 @@ serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const jwtSecret = Deno.env.get("JWT_SECRET");
+    
+    if (!jwtSecret) {
+      console.error("JWT_SECRET not configured");
+      return new Response(
+        JSON.stringify({ success: false, message: "Server configuration error" } as GetBuildingResponse),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: GetBuildingRequest = await req.json();
-    const { buildingId } = body;
+    const { buildingId, sessionToken } = body;
+
+    // Require session token
+    if (!sessionToken) {
+      return new Response(
+        JSON.stringify({ success: false, message: "Authentication required" } as GetBuildingResponse),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate JWT token
+    const secret = new TextEncoder().encode(jwtSecret);
+    let payload: jose.JWTPayload;
+    
+    try {
+      const verified = await jose.jwtVerify(sessionToken, secret);
+      payload = verified.payload;
+    } catch (jwtError) {
+      console.log("JWT validation failed: Invalid or expired token");
+      return new Response(
+        JSON.stringify({ success: false, message: "Invalid or expired session" } as GetBuildingResponse),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Input validation
     if (!buildingId) {
@@ -67,8 +100,18 @@ serve(async (req: Request) => {
     }
 
     const normalizedBuildingId = buildingId.trim().toLowerCase();
+    const userBuildingId = (payload.buildingId as string || "").toLowerCase();
 
-    console.log(`Fetching building info for: ${normalizedBuildingId}`);
+    // Authorization check: User can only access their own building
+    if (normalizedBuildingId !== userBuildingId) {
+      console.log("Authorization failed: Building access denied");
+      return new Response(
+        JSON.stringify({ success: false, message: "Access denied" } as GetBuildingResponse),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Fetching authorized building info");
 
     // Query building from database
     const { data: building, error } = await supabase
@@ -78,7 +121,7 @@ serve(async (req: Request) => {
       .maybeSingle();
 
     if (error) {
-      console.error("Database error fetching building:", error.message);
+      console.error("Database error fetching building");
       return new Response(
         JSON.stringify({ success: false, message: "Service unavailable" } as GetBuildingResponse),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -86,14 +129,14 @@ serve(async (req: Request) => {
     }
 
     if (!building) {
-      console.log(`Building not found: ${normalizedBuildingId}`);
+      console.log("Building not found");
       return new Response(
         JSON.stringify({ success: false, message: "Building not found" } as GetBuildingResponse),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Building info retrieved successfully for: ${normalizedBuildingId}`);
+    console.log("Building info retrieved successfully");
 
     const response: GetBuildingResponse = {
       success: true,
@@ -106,7 +149,7 @@ serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("Unexpected error fetching building:", err);
+    console.error("Unexpected error fetching building");
     return new Response(
       JSON.stringify({ success: false, message: "Internal server error" } as GetBuildingResponse),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
