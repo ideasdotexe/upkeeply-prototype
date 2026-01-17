@@ -80,7 +80,7 @@ export default function Dashboard() {
       .from("buildings")
       .select("name, address, building_type, year_built, units, floors, parking_spots, amenities")
       .eq("building_id", buildingId.toLowerCase())
-      .single();
+      .maybeSingle();
     
     if (data && !error) {
       setBuildingInfo(data);
