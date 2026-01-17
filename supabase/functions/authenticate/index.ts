@@ -1,20 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import * as jose from "https://deno.land/x/jose@v4.14.4/index.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// Simple hash function for password comparison
-// In production, use bcrypt or argon2 - this is a migration step
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 interface LoginRequest {
   companyId: string;
@@ -54,6 +45,15 @@ serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const jwtSecret = Deno.env.get("JWT_SECRET");
+    
+    if (!jwtSecret) {
+      console.error("JWT_SECRET not configured");
+      return new Response(
+        JSON.stringify({ success: false, message: "Server configuration error" } as LoginResponse),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     // Use service role key to access users table (bypasses RLS)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -84,7 +84,7 @@ serve(async (req: Request) => {
     const normalizedBuildingId = buildingId.trim().toLowerCase();
     const normalizedUsername = username.trim().toLowerCase();
 
-    console.log(`Authentication attempt for user: ${normalizedUsername} at company: ${normalizedCompanyId}`);
+    console.log("Authentication attempt received");
 
     // Query user from database (server-side, not exposed to client)
     const { data: user, error } = await supabase
@@ -96,39 +96,37 @@ serve(async (req: Request) => {
       .maybeSingle();
 
     if (error) {
-      console.error("Database error during authentication:", error.message);
+      console.error("Database error during authentication");
       return new Response(
         JSON.stringify({ success: false, message: "Authentication service unavailable" } as LoginResponse),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!user) {
-      console.log(`Authentication failed: User not found - ${normalizedUsername}`);
-      // Generic error message to prevent user enumeration
+    // Use consistent error message for both user not found and invalid password
+    // to prevent user enumeration
+    if (!user || user.password_hash !== password) {
+      console.log("Authentication failed: Invalid credentials");
       return new Response(
         JSON.stringify({ success: false, message: "Invalid credentials" } as LoginResponse),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Compare password (currently stored as plaintext, will be hashed)
-    // For migration: check both plaintext and hashed versions
-    const hashedInputPassword = await hashPassword(password);
-    const passwordMatches = user.password_hash === password || user.password_hash === hashedInputPassword;
-
-    if (!passwordMatches) {
-      console.log(`Authentication failed: Invalid password for user - ${normalizedUsername}`);
-      return new Response(
-        JSON.stringify({ success: false, message: "Invalid credentials" } as LoginResponse),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Generate a simple session token (in production, use JWT with proper signing)
-    const sessionToken = crypto.randomUUID();
+    // Generate signed JWT token with expiration
+    const secret = new TextEncoder().encode(jwtSecret);
+    const jwt = await new jose.SignJWT({ 
+      userId: user.id, 
+      companyId: user.company_id,
+      buildingId: user.building_id,
+      username: user.username
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('24h')
+      .sign(secret);
     
-    console.log(`Authentication successful for user: ${normalizedUsername}`);
+    console.log("Authentication successful");
 
     const response: LoginResponse = {
       success: true,
@@ -142,7 +140,7 @@ serve(async (req: Request) => {
         designation: user.designation,
         email: user.email,
       },
-      sessionToken,
+      sessionToken: jwt,
     };
 
     return new Response(JSON.stringify(response), {
@@ -150,7 +148,7 @@ serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("Unexpected error during authentication:", err);
+    console.error("Unexpected error during authentication");
     return new Response(
       JSON.stringify({ success: false, message: "Internal server error" } as LoginResponse),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

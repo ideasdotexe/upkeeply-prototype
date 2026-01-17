@@ -10,6 +10,7 @@ interface LoginInfo {
   buildingId: string;
   username: string;
   fullName?: string;
+  sessionToken?: string;
 }
 
 interface BuildingInfo {
@@ -32,10 +33,10 @@ function getLoginInfo(): LoginInfo {
   } catch (e) {
     console.error("Failed to parse login info:", e);
   }
-  return { companyId: "", buildingId: "", username: "" };
+  return { companyId: "", buildingId: "", username: "", sessionToken: "" };
 }
 
-async function getBuildingInfo(buildingId: string): Promise<BuildingInfo | null> {
+async function getBuildingInfo(buildingId: string, sessionToken: string): Promise<BuildingInfo | null> {
   if (!buildingId) return null;
   
   // Validate building ID format before making request
@@ -43,11 +44,19 @@ async function getBuildingInfo(buildingId: string): Promise<BuildingInfo | null>
     console.error("Invalid building ID format");
     return null;
   }
+
+  if (!sessionToken) {
+    console.error("No session token available");
+    return null;
+  }
   
   try {
-    // Use secure Edge Function to fetch building info
+    // Use secure Edge Function to fetch building info with JWT token
     const { data, error } = await supabase.functions.invoke("get-building-info", {
-      body: { buildingId: buildingId.trim() },
+      body: { 
+        buildingId: buildingId.trim(),
+        sessionToken: sessionToken
+      },
     });
     
     if (error) {
@@ -80,7 +89,8 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
   const loginInfo = getLoginInfo();
   
   // Fetch building info from database
-  const buildingInfo = await getBuildingInfo(loginInfo.buildingId);
+  // Fetch building info from database with session token
+  const buildingInfo = await getBuildingInfo(loginInfo.buildingId, loginInfo.sessionToken || "");
   
   // Only include extended header for forms with hasExtendedFields
   const hasExtendedHeader = template.hasExtendedFields === true;

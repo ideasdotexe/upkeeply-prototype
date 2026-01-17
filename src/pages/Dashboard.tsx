@@ -68,24 +68,32 @@ export default function Dashboard() {
       const parsed = JSON.parse(loginInfo);
       setUserInfo(parsed);
       
-      // Fetch building info from database
-      if (parsed.buildingId) {
-        fetchBuildingInfo(parsed.buildingId);
+      // Fetch building info from database with session token
+      if (parsed.buildingId && parsed.sessionToken) {
+        fetchBuildingInfo(parsed.buildingId, parsed.sessionToken);
       }
     }
   }, []);
 
-  const fetchBuildingInfo = async (buildingId: string) => {
+  const fetchBuildingInfo = async (buildingId: string, sessionToken: string) => {
     // Validate building ID format before making request
     if (!buildingId || buildingId.length > 100 || !/^[a-zA-Z0-9\s\-_.]+$/.test(buildingId)) {
       console.error("Invalid building ID format");
       return;
     }
 
+    if (!sessionToken) {
+      console.error("No session token available");
+      return;
+    }
+
     try {
-      // Use secure Edge Function to fetch building info
+      // Use secure Edge Function to fetch building info with JWT token
       const { data, error } = await supabase.functions.invoke("get-building-info", {
-        body: { buildingId: buildingId.trim() },
+        body: { 
+          buildingId: buildingId.trim(),
+          sessionToken: sessionToken
+        },
       });
       
       if (error) {
