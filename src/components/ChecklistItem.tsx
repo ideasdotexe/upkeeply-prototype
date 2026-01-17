@@ -15,7 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CheckCircle, XCircle, AlertCircle, Power, PowerOff, Lock, Unlock, Trash2, CalendarIcon } from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, Power, PowerOff, Lock, Unlock, Trash2, CalendarIcon, StickyNote, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChecklistItem as ChecklistItemType } from "@/lib/formTemplates";
 import { format } from "date-fns";
@@ -39,6 +39,8 @@ interface ChecklistItemProps {
   onRemove?: () => void;
   canRemove?: boolean;
   showExtendedFields?: boolean;
+  note?: string;
+  onNoteChange?: (note: string) => void;
 }
 
 export function ChecklistItem({
@@ -48,8 +50,11 @@ export function ChecklistItem({
   onRemove,
   canRemove = false,
   showExtendedFields = false,
+  note = "",
+  onNoteChange,
 }: ChecklistItemProps) {
   const [dateOpen, setDateOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
 
   // Extract extended values with defaults
   const extendedValue: ExtendedValue = value || {};
@@ -372,6 +377,51 @@ export function ChecklistItem({
               </PopoverContent>
             </Popover>
           </div>
+        </div>
+      )}
+
+      {/* Add Note Section */}
+      {onNoteChange && (
+        <div className="mt-2 pt-2 border-t border-border/30">
+          {noteOpen || note ? (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <StickyNote className="h-3 w-3" />
+                  Note
+                </label>
+                {!note && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs text-muted-foreground"
+                    onClick={() => setNoteOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </div>
+              <Textarea
+                value={note}
+                onChange={(e) => onNoteChange(e.target.value)}
+                className="min-h-[60px] resize-none text-sm"
+                placeholder="Add a note..."
+              />
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+              onClick={() => setNoteOpen(true)}
+            >
+              <StickyNote className="h-3 w-3" />
+              Add Note
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          )}
         </div>
       )}
 
