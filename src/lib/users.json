@@ -9,4 +9,15 @@
     "designation": "Property Manager",
     "email": "mihirmehta.artist@gmail.com"
   }
+
+  {
+    "id": "2",
+    "company_id": "super",
+    "building_id": "super",
+    "username": "super",
+    "password": "super",
+    "full_name": "Mihir Mehta",
+    "designation": "Developer",
+    "email": "ideasdotexe@gmail.com"
+  }
 ]
