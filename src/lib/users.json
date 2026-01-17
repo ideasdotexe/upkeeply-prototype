@@ -12,10 +12,10 @@
 
   {
     "id": "2",
-    "company_id": "super",
-    "building_id": "super",
-    "username": "super",
-    "password": "super",
+    "company_id": "admin",
+    "building_id": "admin",
+    "username": "admin",
+    "password": "admin123",
     "full_name": "Mihir Mehta",
     "designation": "Developer",
     "email": "ideasdotexe@gmail.com"
