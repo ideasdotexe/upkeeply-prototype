@@ -3,11 +3,24 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { CompletedInspection, InspectionResponse } from "./inspectionsStore";
 import { getFormTemplate } from "./formTemplates";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LoginInfo {
   companyId: string;
   buildingId: string;
   username: string;
+  fullName?: string;
+}
+
+interface BuildingInfo {
+  name: string;
+  address: string | null;
+  building_type: string | null;
+  year_built: number | null;
+  units: number | null;
+  floors: number | null;
+  parking_spots: number | null;
+  amenities: string | null;
 }
 
 function getLoginInfo(): LoginInfo {
@@ -22,7 +35,20 @@ function getLoginInfo(): LoginInfo {
   return { companyId: "", buildingId: "", username: "" };
 }
 
-export function generateInspectionPDF(inspection: CompletedInspection): void {
+async function getBuildingInfo(buildingId: string): Promise<BuildingInfo | null> {
+  if (!buildingId) return null;
+  
+  const { data, error } = await supabase
+    .from("buildings")
+    .select("name, address, building_type, year_built, units, floors, parking_spots, amenities")
+    .eq("building_id", buildingId.toLowerCase())
+    .maybeSingle();
+  
+  if (error || !data) return null;
+  return data;
+}
+
+export async function generateInspectionPDF(inspection: CompletedInspection): Promise<void> {
   const template = getFormTemplate(inspection.formId);
   
   if (!template) {
@@ -34,6 +60,9 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
   const responses = inspection.responses || {};
   const completedDate = new Date(inspection.completedAt);
   const loginInfo = getLoginInfo();
+  
+  // Fetch building info from database
+  const buildingInfo = await getBuildingInfo(loginInfo.buildingId);
   
   // Only include extended header for forms with hasExtendedFields
   const hasExtendedHeader = template.hasExtendedFields === true;
@@ -92,17 +121,33 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
     
     // Corporation No (from Company ID)
     doc.text(`Corporation No: ${loginInfo.companyId || "________________"}`, leftColX, yPosition);
-    // Address (from Building ID)
-    doc.text(`Address: ${loginInfo.buildingId || "_________________________"}`, rightColX, yPosition);
+    // Address (from Building Info - use address from database, fallback to buildingId)
+    const displayAddress = buildingInfo?.address || loginInfo.buildingId || "_________________________";
+    doc.text(`Address: ${displayAddress}`, rightColX, yPosition);
     
     yPosition += 8;
     
     // Date and Inspected By row
     doc.text(`Date: ${format(completedDate, "MMMM d, yyyy")}`, leftColX, yPosition);
-    // Inspected By (from username)
-    doc.text(`Inspected By: ${loginInfo.username || "________________"}`, rightColX, yPosition);
+    // Inspected By (from fullName or username)
+    const inspectedBy = loginInfo.fullName || loginInfo.username || "________________";
+    doc.text(`Inspected By: ${inspectedBy}`, rightColX, yPosition);
     
     yPosition += 8;
+    
+    // Building details row (if available from database)
+    if (buildingInfo) {
+      const buildingDetails: string[] = [];
+      if (buildingInfo.building_type) buildingDetails.push(`Type: ${buildingInfo.building_type}`);
+      if (buildingInfo.units) buildingDetails.push(`Units: ${buildingInfo.units}`);
+      if (buildingInfo.floors) buildingDetails.push(`Floors: ${buildingInfo.floors}`);
+      
+      if (buildingDetails.length > 0) {
+        doc.text(`Building: ${buildingInfo.name || loginInfo.buildingId}`, leftColX, yPosition);
+        doc.text(buildingDetails.join(" | "), rightColX, yPosition);
+        yPosition += 8;
+      }
+    }
     
     // Line separator
     doc.setLineWidth(0.5);
@@ -118,8 +163,20 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
     // Sub-header info
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`DATE: ${format(completedDate, "MMMM d, yyyy")}`, margin, 30);
-    doc.text(`TIME: ${format(completedDate, "h:mm a")}`, margin, 36);
+    
+    // Building name on left
+    const buildingName = buildingInfo?.name || loginInfo.buildingId || "Building";
+    doc.text(`BUILDING: ${buildingName.toUpperCase()}`, margin, 30);
+    
+    doc.text(`DATE: ${format(completedDate, "MMMM d, yyyy")}`, margin, 36);
+    doc.text(`TIME: ${format(completedDate, "h:mm a")}`, margin, 42);
+    
+    // Inspected by
+    const inspectedBy = loginInfo.fullName || loginInfo.username || "";
+    if (inspectedBy) {
+      doc.text(`INSPECTED BY: ${inspectedBy.toUpperCase()}`, margin, 48);
+    }
+    
     doc.text(`STATUS: ${inspection.status === "completed" ? "COMPLETED" : "ISSUES FOUND"}`, pageWidth - margin - 50, 30);
     doc.text(`ITEMS: ${inspection.itemsCount}`, pageWidth - margin - 50, 36);
     if (inspection.issuesCount) {
@@ -128,9 +185,9 @@ export function generateInspectionPDF(inspection: CompletedInspection): void {
     
     // Line separator
     doc.setLineWidth(0.5);
-    doc.line(margin, 48, pageWidth - margin, 48);
+    doc.line(margin, 54, pageWidth - margin, 54);
     
-    yPosition = 55;
+    yPosition = 61;
   }
   
   // Helper function to generate table for items

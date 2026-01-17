@@ -37,7 +37,7 @@ export default function CalendarPage() {
   );
 
   // Download all forms for the selected month
-  const handleDownloadAllMonth = () => {
+  const handleDownloadAllMonth = async () => {
     if (monthInspections.length === 0) {
       toast({
         title: "No forms to download",
@@ -48,9 +48,9 @@ export default function CalendarPage() {
     }
 
     try {
-      monthInspections.forEach(inspection => {
-        generateInspectionPDF(inspection);
-      });
+      for (const inspection of monthInspections) {
+        await generateInspectionPDF(inspection);
+      }
       toast({
         title: "PDFs Downloaded",
         description: `${monthInspections.length} inspection form(s) for ${format(currentMonth, "MMMM yyyy")} downloaded.`,
@@ -244,11 +244,11 @@ export default function CalendarPage() {
 }
 
 function InspectionCard({ inspection }: { inspection: CompletedInspection }) {
-  const handleDownload = (e: React.MouseEvent) => {
+  const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
     try {
-      generateInspectionPDF(inspection);
+      await generateInspectionPDF(inspection);
       toast({
         title: "PDF Downloaded",
         description: `${inspection.formName} inspection report has been downloaded.`,
