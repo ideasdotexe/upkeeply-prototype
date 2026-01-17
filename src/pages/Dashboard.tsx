@@ -36,10 +36,16 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("all");
   const [openIssuesCount, setOpenIssuesCount] = useState(0);
   const [recentInspections, setRecentInspections] = useState<CompletedInspection[]>([]);
+  const [userInfo, setUserInfo] = useState<{ fullName?: string; buildingId?: string } | null>(null);
 
   useEffect(() => {
     setOpenIssuesCount(getOpenIssuesCount());
     setRecentInspections(getInspections().slice(0, 5));
+    
+    const loginInfo = localStorage.getItem("loginInfo");
+    if (loginInfo) {
+      setUserInfo(JSON.parse(loginInfo));
+    }
   }, []);
 
   const dailyForms = getFormsByFrequency("daily");
@@ -60,9 +66,9 @@ export default function Dashboard() {
         {/* Welcome Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Good morning, John</h1>
+            <h1 className="text-2xl font-bold text-foreground">Good morning, {userInfo?.fullName || "User"}</h1>
             <p className="text-muted-foreground mt-1">
-              Here's what needs your attention at <span className="font-medium text-foreground">123 Main Street</span>
+              Here's what needs your attention at <span className="font-medium text-foreground">{userInfo?.buildingId || "your building"}</span>
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

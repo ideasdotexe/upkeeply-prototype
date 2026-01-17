@@ -104,6 +104,7 @@ const Login = () => {
         companyId: user.company_id,
         buildingId: user.building_id,
         username: user.username,
+        fullName: user.full_name,
         designation: user.designation,
         email: user.email,
         userId: user.id
