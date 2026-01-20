@@ -72,7 +72,6 @@ import { toast } from "sonner";
 
 interface ExtendedValue {
   mainValue?: string | boolean | number | { identifier?: string; status?: boolean | null } | null;
-  description?: string;
   actionBy?: string;
   completionDate?: string;
 }
@@ -108,6 +107,7 @@ export default function FormPage() {
   const [removedItems, setRemovedItems] = useState<RemovedItems>({});
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [templateLoaded, setTemplateLoaded] = useState(false);
+  const [loggedInUserName, setLoggedInUserName] = useState("");
   
   // Add item dialog state
   const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
@@ -124,6 +124,19 @@ export default function FormPage() {
   
   // Reset template confirmation dialog state
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+
+  // Load logged-in user's name from localStorage
+  useEffect(() => {
+    const loginInfo = localStorage.getItem("loginInfo");
+    if (loginInfo) {
+      try {
+        const parsed = JSON.parse(loginInfo);
+        setLoggedInUserName(parsed.fullName || parsed.username || "");
+      } catch {
+        // Ignore parsing errors
+      }
+    }
+  }, []);
 
   // Load saved template customization on mount
   useEffect(() => {
@@ -769,6 +782,7 @@ export default function FormPage() {
                             canRemove={true}
                             onRemove={() => handleRemoveItemClick(section.id, item.id, !!item.isCustom, item.label)}
                             showExtendedFields={template?.hasExtendedFields}
+                            loggedInUserName={loggedInUserName}
                           />
                         ))}
                       </div>
