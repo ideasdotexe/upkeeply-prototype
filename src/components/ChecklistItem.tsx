@@ -27,7 +27,6 @@ interface CombinedValue {
 
 interface ExtendedValue {
   mainValue?: string | boolean | number | CombinedValue | null;
-  description?: string;
   actionBy?: string;
   completionDate?: string;
 }
@@ -41,6 +40,7 @@ interface ChecklistItemProps {
   showExtendedFields?: boolean;
   note?: string;
   onNoteChange?: (note: string) => void;
+  loggedInUserName?: string;
 }
 
 export function ChecklistItem({
@@ -52,6 +52,7 @@ export function ChecklistItem({
   showExtendedFields = false,
   note = "",
   onNoteChange,
+  loggedInUserName = "",
 }: ChecklistItemProps) {
   const [dateOpen, setDateOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
@@ -59,8 +60,7 @@ export function ChecklistItem({
   // Extract extended values with defaults
   const extendedValue: ExtendedValue = value || {};
   const mainValue = extendedValue.mainValue;
-  const description = extendedValue.description || "";
-  const actionBy = extendedValue.actionBy || "";
+  const actionBy = extendedValue.actionBy || loggedInUserName;
   const completionDate = extendedValue.completionDate || format(new Date(), "yyyy-MM-dd");
 
   const updateField = (field: keyof ExtendedValue, fieldValue: unknown) => {
@@ -320,68 +320,77 @@ export function ChecklistItem({
         </div>
       </div>
 
-      {/* Row 2: Description, Action By, Completion Date - Only show for forms with extended fields */}
+      {/* Row 2: Notes first, then Action By, Completion Date - Only show for forms with extended fields */}
       {showExtendedFields && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 pt-3 border-t border-border/30">
-          {/* Description */}
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Description</label>
-            <Input
-              type="text"
-              value={description}
-              onChange={(e) => updateField("description", e.target.value)}
-              className="h-8 text-sm"
-              placeholder="Enter description..."
-            />
-          </div>
-
-          {/* Action By */}
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Action By</label>
-            <Input
-              type="text"
-              value={actionBy}
-              onChange={(e) => updateField("actionBy", e.target.value)}
-              className="h-8 text-sm"
-              placeholder="Person name..."
-            />
-          </div>
-
-          {/* Completion Date */}
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Completion Date</label>
-            <Popover open={dateOpen} onOpenChange={setDateOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full h-8 justify-start text-left font-normal text-sm",
-                    !completionDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                  {completionDate ? format(new Date(completionDate), "MMM dd, yyyy") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={completionDate ? new Date(completionDate) : undefined}
-                  onSelect={(date) => {
-                    updateField("completionDate", date ? format(date, "yyyy-MM-dd") : null);
-                    setDateOpen(false);
-                  }}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
+        <>
+          {/* Notes Section - First */}
+          {onNoteChange && (
+            <div className="mt-3 pt-3 border-t border-border/30">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <StickyNote className="h-3 w-3" />
+                  Notes
+                </label>
+                <Textarea
+                  value={note}
+                  onChange={(e) => onNoteChange(e.target.value)}
+                  className="min-h-[60px] resize-none text-sm"
+                  placeholder="Add notes..."
                 />
-              </PopoverContent>
-            </Popover>
+              </div>
+            </div>
+          )}
+          
+          {/* Action By and Completion Date */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 pt-3 border-t border-border/30">
+            {/* Action By */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Action By</label>
+              <Input
+                type="text"
+                value={actionBy}
+                onChange={(e) => updateField("actionBy", e.target.value)}
+                className="h-8 text-sm"
+                placeholder="Person name..."
+              />
+            </div>
+
+            {/* Completion Date */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Completion Date</label>
+              <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-8 justify-start text-left font-normal text-sm",
+                      !completionDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {completionDate ? format(new Date(completionDate), "MMM dd, yyyy") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={completionDate ? new Date(completionDate) : undefined}
+                    onSelect={(date) => {
+                      updateField("completionDate", date ? format(date, "yyyy-MM-dd") : null);
+                      setDateOpen(false);
+                    }}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
-      {/* Add Note Section */}
-      {onNoteChange && (
+      {/* Add Note Section - Only show for non-extended fields forms */}
+      {onNoteChange && !showExtendedFields && (
         <div className="mt-2 pt-2 border-t border-border/30">
           {noteOpen || note ? (
             <div className="space-y-1">

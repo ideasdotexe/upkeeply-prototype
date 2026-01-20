@@ -267,14 +267,14 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
               completionDate?: string;
             };
             value = extendedValue.mainValue ?? null;
-            // Get extended fields from the value object
-            noteOrDescription = extendedValue.description || response.note || "";
+            // Get note from response.note (since description was removed)
+            noteOrDescription = response.note || "";
             actionBy = extendedValue.actionBy || response.actionBy || "";
             completionDate = extendedValue.completionDate || response.completionDate || "";
           } else {
             // Old format - value is the actual value
             value = rawValue;
-            noteOrDescription = response.note || response.description || "";
+            noteOrDescription = response.note || "";
             actionBy = response.actionBy || "";
             completionDate = response.completionDate || "";
           }
@@ -369,7 +369,7 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
     
     // Generate table
     const tableHead = hasExtendedHeader 
-      ? [["Item", "Status", "Description", "Action By", "Completion Date"]]
+      ? [["Item", "Status", "Notes", "Action By", "Completion Date"]]
       : [["Item", "Status", "Notes"]];
     
     const columnStyles = hasExtendedHeader
