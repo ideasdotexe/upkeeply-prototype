@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -17,7 +18,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { CheckCircle, XCircle, AlertCircle, Power, PowerOff, Lock, Unlock, Trash2, CalendarIcon, StickyNote, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ChecklistItem as ChecklistItemType } from "@/lib/formTemplates";
+import { ChecklistItem as ChecklistItemType, MechanicalMaintenanceValue } from "@/lib/formTemplates";
 import { format } from "date-fns";
 
 interface CombinedValue {
@@ -26,7 +27,7 @@ interface CombinedValue {
 }
 
 interface ExtendedValue {
-  mainValue?: string | boolean | number | CombinedValue | null;
+  mainValue?: string | boolean | number | CombinedValue | MechanicalMaintenanceValue | null;
   actionBy?: string;
   completionDate?: string;
 }
@@ -148,8 +149,61 @@ export function ChecklistItem({
     );
   };
 
+  const renderMechanicalMaintenanceInput = () => {
+    const mechValue = (mainValue as MechanicalMaintenanceValue) || {};
+    const actions = [
+      { key: "inspect", label: "INSPECT" },
+      { key: "oil", label: "OIL" },
+      { key: "clean", label: "CLEAN" },
+      { key: "test", label: "TEST" },
+      { key: "lube", label: "LUBE" },
+      { key: "filter", label: "FILTER" },
+    ] as const;
+
+    const updateMechField = (field: keyof MechanicalMaintenanceValue, val: boolean | string) => {
+      updateField("mainValue", { ...mechValue, [field]: val });
+    };
+
+    return (
+      <div className="w-full space-y-3">
+        {/* Checkboxes row */}
+        <div className="flex flex-wrap gap-3">
+          {actions.map(({ key, label }) => (
+            <div key={key} className="flex items-center gap-1.5">
+              <Checkbox
+                id={`${item.id}-${key}`}
+                checked={mechValue[key] || false}
+                onCheckedChange={(checked) => updateMechField(key, checked === true)}
+                className="h-4 w-4"
+              />
+              <label
+                htmlFor={`${item.id}-${key}`}
+                className="text-xs font-medium text-muted-foreground cursor-pointer select-none"
+              >
+                {label}
+              </label>
+            </div>
+          ))}
+        </div>
+        {/* Comments field */}
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">Comments</label>
+          <Textarea
+            value={mechValue.comments || ""}
+            onChange={(e) => updateMechField("comments", e.target.value)}
+            className="min-h-[50px] resize-none text-sm"
+            placeholder="Add comments..."
+          />
+        </div>
+      </div>
+    );
+  };
+
   const renderMainInput = () => {
     switch (item.type) {
+      case "mechanical-maintenance":
+        return renderMechanicalMaintenanceInput();
+
       case "combined-toggle": {
         const combinedValue = (mainValue as CombinedValue) || {};
         return (
@@ -259,6 +313,37 @@ export function ChecklistItem({
   const hasIssue = 
     (item.type === "combined-toggle" && (mainValue as CombinedValue)?.status === false) ||
     (mainValue === false && (item.type === "pass-fail" || item.type === "ok-issue" || item.type === "open-closed"));
+
+  // For mechanical-maintenance type, render a different layout
+  if (item.type === "mechanical-maintenance") {
+    return (
+      <div className="rounded-md border px-3 py-3 transition-all border-border/50 bg-card/50">
+        {/* Equipment Name */}
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-sm font-medium text-foreground">{item.label}</span>
+            {item.required && (
+              <span className="text-destructive text-xs">*</span>
+            )}
+          </div>
+          {canRemove && onRemove && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+              onClick={onRemove}
+              title="Remove item"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+        {/* Checkboxes and Comments */}
+        {renderMainInput()}
+      </div>
+    );
+  }
 
   // For textarea without label, render full-width
   if (item.type === "textarea" && !item.label) {

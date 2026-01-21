@@ -64,14 +64,14 @@ import {
   ChevronsUpDown,
   RotateCcw
 } from "lucide-react";
-import { getFormTemplate, FormSection, ChecklistItem as ChecklistItemType, ChecklistItemType as ItemType, itemTemplateLibrary, ItemTemplate } from "@/lib/formTemplates";
+import { getFormTemplate, FormSection, ChecklistItem as ChecklistItemType, ChecklistItemType as ItemType, itemTemplateLibrary, ItemTemplate, MechanicalMaintenanceValue } from "@/lib/formTemplates";
 import { addIssue } from "@/lib/issuesStore";
 import { loadTemplateCustomization, saveTemplateCustomization, clearTemplateCustomization, CustomItemData, customDataToChecklistItem } from "@/lib/formTemplateStore";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface ExtendedValue {
-  mainValue?: string | boolean | number | { identifier?: string; status?: boolean | null } | null;
+  mainValue?: string | boolean | number | { identifier?: string; status?: boolean | null } | MechanicalMaintenanceValue | null;
   actionBy?: string;
   completionDate?: string;
 }
