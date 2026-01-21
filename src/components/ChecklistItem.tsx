@@ -171,53 +171,36 @@ export function ChecklistItem({
 
     return (
       <div className="w-full space-y-3">
-        {/* Issue flag */}
-        <div className="flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            size="sm"
-            variant={mechValue.issue ? "default" : "outline"}
-            className={cn(
-              "h-8 px-2 text-xs gap-1",
-              mechValue.issue && "bg-warning hover:bg-warning/90 text-warning-foreground"
-            )}
-            onClick={() => updateMechField("issue", !mechValue.issue)}
-          >
-            <AlertTriangle className="h-3.5 w-3.5" />
-            Issue
-          </Button>
-          <span className="text-xs text-muted-foreground">Use Issue for superintendent tracking</span>
-        </div>
-
-        {/* Checkboxes row */}
+        {/* Checkboxes */}
         <div className="flex flex-wrap gap-3">
           {actions
             .filter(({ key }) => allowed.has(key))
             .map(({ key, label }) => (
-            <div key={key} className="flex items-center gap-1.5">
-              <Checkbox
-                id={`${item.id}-${key}`}
-                checked={mechValue[key] || false}
-                onCheckedChange={(checked) => updateMechField(key, checked === true)}
-                className="h-4 w-4"
-              />
-              <label
-                htmlFor={`${item.id}-${key}`}
-                className="text-xs font-medium text-muted-foreground cursor-pointer select-none"
-              >
-                {label}
-              </label>
-            </div>
-          ))}
+              <div key={key} className="flex items-center gap-1.5">
+                <Checkbox
+                  id={`${item.id}-${key}`}
+                  checked={mechValue[key] || false}
+                  onCheckedChange={(checked) => updateMechField(key, checked === true)}
+                  className="h-4 w-4"
+                />
+                <label
+                  htmlFor={`${item.id}-${key}`}
+                  className="text-xs font-medium text-muted-foreground cursor-pointer select-none"
+                >
+                  {label}
+                </label>
+              </div>
+            ))}
         </div>
-        {/* Comments field */}
+
+        {/* Note */}
         <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Comments</label>
+          <label className="text-xs font-medium text-muted-foreground">Note</label>
           <Textarea
             value={mechValue.comments || ""}
             onChange={(e) => updateMechField("comments", e.target.value)}
             className="min-h-[50px] resize-none text-sm"
-            placeholder="Add comments..."
+            placeholder="Add a note..."
           />
         </div>
       </div>
@@ -341,6 +324,7 @@ export function ChecklistItem({
 
   // For mechanical-maintenance type, render a different layout
   if (item.type === "mechanical-maintenance") {
+    const mechValue = (mainValue as MechanicalMaintenanceValue) || {};
     return (
       <div className="rounded-md border px-3 py-3 transition-all border-border/50 bg-card/50">
         {/* Equipment Name */}
@@ -351,18 +335,41 @@ export function ChecklistItem({
               <span className="text-destructive text-xs">*</span>
             )}
           </div>
-          {canRemove && onRemove && (
+
+          <div className="flex items-center gap-2">
             <Button
               type="button"
               size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-              onClick={onRemove}
-              title="Remove item"
+              variant={mechValue.issue ? "default" : "outline"}
+              className={cn(
+                "h-8 px-2 text-xs gap-1",
+                mechValue.issue && "bg-warning hover:bg-warning/90 text-warning-foreground"
+              )}
+              onClick={() =>
+                updateField("mainValue", {
+                  ...mechValue,
+                  issue: !mechValue.issue,
+                })
+              }
+              title="Mark issue"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Issue
             </Button>
-          )}
+
+            {canRemove && onRemove && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                onClick={onRemove}
+                title="Remove item"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
         </div>
         {/* Checkboxes and Comments */}
         {renderMainInput()}
