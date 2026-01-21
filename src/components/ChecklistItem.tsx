@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CheckCircle, XCircle, AlertCircle, Power, PowerOff, Lock, Unlock, Trash2, CalendarIcon, StickyNote, ChevronDown } from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, Power, PowerOff, Lock, Unlock, Trash2, CalendarIcon, StickyNote, ChevronDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChecklistItem as ChecklistItemType, MechanicalMaintenanceValue } from "@/lib/formTemplates";
 import { format } from "date-fns";
@@ -152,7 +152,6 @@ export function ChecklistItem({
   const renderMechanicalMaintenanceInput = () => {
     const mechValue = (mainValue as MechanicalMaintenanceValue) || {};
     const actions = [
-      { key: "inspect", label: "INSPECT" },
       { key: "oil", label: "OIL" },
       { key: "clean", label: "CLEAN" },
       { key: "test", label: "TEST" },
@@ -160,15 +159,41 @@ export function ChecklistItem({
       { key: "filter", label: "FILTER" },
     ] as const;
 
+    const allowed = new Set(
+      item.maintenanceActions !== undefined
+        ? item.maintenanceActions
+        : actions.map((a) => a.key)
+    );
+
     const updateMechField = (field: keyof MechanicalMaintenanceValue, val: boolean | string) => {
       updateField("mainValue", { ...mechValue, [field]: val });
     };
 
     return (
       <div className="w-full space-y-3">
+        {/* Issue flag */}
+        <div className="flex items-center justify-between gap-3">
+          <Button
+            type="button"
+            size="sm"
+            variant={mechValue.issue ? "default" : "outline"}
+            className={cn(
+              "h-8 px-2 text-xs gap-1",
+              mechValue.issue && "bg-warning hover:bg-warning/90 text-warning-foreground"
+            )}
+            onClick={() => updateMechField("issue", !mechValue.issue)}
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Issue
+          </Button>
+          <span className="text-xs text-muted-foreground">Use Issue for superintendent tracking</span>
+        </div>
+
         {/* Checkboxes row */}
         <div className="flex flex-wrap gap-3">
-          {actions.map(({ key, label }) => (
+          {actions
+            .filter(({ key }) => allowed.has(key))
+            .map(({ key, label }) => (
             <div key={key} className="flex items-center gap-1.5">
               <Checkbox
                 id={`${item.id}-${key}`}

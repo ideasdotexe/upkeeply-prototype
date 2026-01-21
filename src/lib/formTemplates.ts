@@ -24,12 +24,12 @@ export type ChecklistItemType =
 
 // Mechanical maintenance value structure
 export interface MechanicalMaintenanceValue {
-  inspect?: boolean;
   oil?: boolean;
   clean?: boolean;
   test?: boolean;
   lube?: boolean;
   filter?: boolean;
+  issue?: boolean;
   comments?: string;
 }
 
@@ -47,6 +47,8 @@ export interface ChecklistItem {
   // For combined-toggle type
   toggleType?: "on-off" | "open-closed";
   identifierLabel?: string; // e.g., "Fan #", "Pump #"
+  // For mechanical-maintenance type: which action checkboxes should be shown (per PDF asterisks)
+  maintenanceActions?: Array<"oil" | "clean" | "test" | "lube" | "filter">;
 }
 
 // Item templates library for quick add
@@ -813,113 +815,113 @@ export const formTemplates: FormTemplate[] = [
         id: "elevator-room-roof",
         title: "Elevator Room, Roof",
         items: [
-          { id: "tag-1", label: "Elevator Roof Vent Fan", type: "mechanical-maintenance", required: true },
-          { id: "tag-2", label: "Elevator Room Heater", type: "mechanical-maintenance", required: true },
+          { id: "tag-1", label: "Elevator Roof Vent Fan", type: "mechanical-maintenance", required: true, maintenanceActions: ["clean"] },
+          { id: "tag-2", label: "Elevator Room Heater", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
         ],
       },
       {
         id: "boiler-room-roof",
         title: "Boiler Room, Roof",
         items: [
-          { id: "tag-4", label: "Elevator Pressurization Fan", type: "mechanical-maintenance", required: true },
-          { id: "tag-5", label: "East Pressurization Fan", type: "mechanical-maintenance", required: true },
-          { id: "tag-6", label: "West Pressurization Fan", type: "mechanical-maintenance", required: true },
-          { id: "tag-7a", label: "Recirculation Pump D.H.W.", type: "mechanical-maintenance", required: true },
-          { id: "tag-7b", label: "Recirculation Pump D.H.W. Boiler #1", type: "mechanical-maintenance", required: true },
-          { id: "tag-8", label: "Recirculation Pump D.H.W. Boiler #2", type: "mechanical-maintenance", required: true },
-          { id: "tag-9", label: "D.H.W. Boiler #1 (Valve)", type: "mechanical-maintenance", required: true },
-          { id: "tag-10", label: "D.H.W. Boiler #2 (Valve)", type: "mechanical-maintenance", required: true },
-          { id: "tag-11", label: "D.H.W. Water Storage Tank (Valve)", type: "mechanical-maintenance", required: true },
-          { id: "tag-12", label: "D.H.W. Recirculation Pump (Bearings)", type: "mechanical-maintenance", required: true },
-          { id: "tag-13", label: "Heating Boiler #1 (Valve)", type: "mechanical-maintenance", required: true },
-          { id: "tag-14", label: "Heating Boiler #2 (Valve)", type: "mechanical-maintenance", required: true },
-          { id: "tag-15", label: "Heating Boiler #3 (Valve)", type: "mechanical-maintenance", required: true },
-          { id: "tag-16", label: "Heating Boiler #4 (Valve)", type: "mechanical-maintenance", required: true },
-          { id: "tag-17", label: "Heating Expansion Tank (Drain annually)", type: "mechanical-maintenance", required: true },
+          { id: "tag-4", label: "Elevator Pressurization Fan", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-5", label: "East Pressurization Fan", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-6", label: "West Pressurization Fan", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-7a", label: "Recirculation Pump D.H.W.", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil"] },
+          { id: "tag-7b", label: "Recirculation Pump D.H.W. Boiler #1", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil"] },
+          { id: "tag-8", label: "Recirculation Pump D.H.W. Boiler #2", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil"] },
+          { id: "tag-9", label: "D.H.W. Boiler #1 (Valve)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "clean"] },
+          { id: "tag-10", label: "D.H.W. Boiler #2 (Valve)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "clean"] },
+          { id: "tag-11", label: "D.H.W. Water Storage Tank (Valve)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "clean"] },
+          { id: "tag-12", label: "D.H.W. Recirculation Pump (Bearings)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "test"] },
+          { id: "tag-13", label: "Heating Boiler #1 (Valve)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "clean"] },
+          { id: "tag-14", label: "Heating Boiler #2 (Valve)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "clean"] },
+          { id: "tag-15", label: "Heating Boiler #3 (Valve)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "clean"] },
+          { id: "tag-16", label: "Heating Boiler #4 (Valve)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "clean"] },
+          { id: "tag-17", label: "Heating Expansion Tank (Drain annually)", type: "mechanical-maintenance", required: true, maintenanceActions: ["clean"] },
         ],
       },
       {
         id: "fan-room-roof-ceiling",
         title: "Fan Room, Roof Ceiling",
         items: [
-          { id: "tag-18", label: "Corridor Fresh Air Fan (Drain annually)", type: "mechanical-maintenance", required: true },
-          { id: "tag-19", label: "Heat Recirculation Pump #8", type: "mechanical-maintenance", required: true },
-          { id: "tag-20", label: "Corridor Fresh Air Fan Unit (Motor, shaft bearings, belts, Glycol change)", type: "mechanical-maintenance", required: true },
-          { id: "tag-21", label: "Heater", type: "mechanical-maintenance", required: true },
+          { id: "tag-18", label: "Corridor Fresh Air Fan (Drain annually)", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-19", label: "Heat Recirculation Pump #8", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil"] },
+          { id: "tag-20", label: "Corridor Fresh Air Fan Unit (Motor, shaft bearings, belts, Glycol change)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "clean", "test", "lube"] },
+          { id: "tag-21", label: "Heater", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
         ],
       },
       {
         id: "floor-equipment",
         title: "Floor Equipment",
         items: [
-          { id: "tag-3", label: "Pressuring Fan (Floor)", type: "mechanical-maintenance", required: true },
-          { id: "tag-76", label: "Recirculating Pump (Floor Ceiling)", type: "mechanical-maintenance", required: true },
-          { id: "tag-78", label: "Booster Recirculation Pump (Check and lube)", type: "mechanical-maintenance", required: true },
-          { id: "tag-74", label: "Hot Water Ceiling Heater (Floor Hallway)", type: "mechanical-maintenance", required: true },
+          { id: "tag-3", label: "Pressuring Fan (Floor)", type: "mechanical-maintenance", required: true, maintenanceActions: ["clean"] },
+          { id: "tag-76", label: "Recirculating Pump (Floor Ceiling)", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-78", label: "Booster Recirculation Pump (Check and lube)", type: "mechanical-maintenance", required: true, maintenanceActions: ["lube"] },
+          { id: "tag-74", label: "Hot Water Ceiling Heater (Floor Hallway)", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
         ],
       },
       {
         id: "locker-janitor-rooms",
         title: "Locker & Janitor Rooms",
         items: [
-          { id: "tag-22", label: "Locker Exhaust Fan Motor (Belt)", type: "mechanical-maintenance", required: true },
-          { id: "tag-75", label: "Janitors Room Exhaust Fan Motor (Belts)", type: "mechanical-maintenance", required: true },
-          { id: "tag-77", label: "Service Corridor Exhaust Fan & Motor", type: "mechanical-maintenance", required: true },
-          { id: "tag-26", label: "Locker Room Heating Loop Recirculation Pump (Pressure)", type: "mechanical-maintenance", required: true },
-          { id: "tag-27", label: "Locker Room Exhaust Fan Motor", type: "mechanical-maintenance", required: true },
+          { id: "tag-22", label: "Locker Exhaust Fan Motor (Belt)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "test"] },
+          { id: "tag-75", label: "Janitors Room Exhaust Fan Motor (Belts)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "test"] },
+          { id: "tag-77", label: "Service Corridor Exhaust Fan & Motor", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "test"] },
+          { id: "tag-26", label: "Locker Room Heating Loop Recirculation Pump (Pressure)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "test"] },
+          { id: "tag-27", label: "Locker Room Exhaust Fan Motor", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "test"] },
         ],
       },
       {
         id: "electrical-rooms",
         title: "Electrical Rooms",
         items: [
-          { id: "tag-23", label: "Electrical Room Exhaust Fan Motor (Bearings, belts)", type: "mechanical-maintenance", required: true },
-          { id: "tag-24", label: "Electrical Room by Security Room Exhaust Fan Motor (Bearings, belts)", type: "mechanical-maintenance", required: true },
-          { id: "tag-25", label: "Electrical Room Exhaust Fan Motor #2 (Bearings, belts)", type: "mechanical-maintenance", required: true },
+          { id: "tag-23", label: "Electrical Room Exhaust Fan Motor (Bearings, belts)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "test"] },
+          { id: "tag-24", label: "Electrical Room by Security Room Exhaust Fan Motor (Bearings, belts)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "test"] },
+          { id: "tag-25", label: "Electrical Room Exhaust Fan Motor #2 (Bearings, belts)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "test"] },
         ],
       },
       {
         id: "garage",
         title: "Garage",
         items: [
-          { id: "tag-79", label: "Garage Door Operator and Door (Top of Garage Ramp)", type: "mechanical-maintenance", required: true },
-          { id: "tag-28", label: "Garage Exhaust Fans (Belts)", type: "mechanical-maintenance", required: true },
-          { id: "tag-45", label: "Garage Exhaust Fans (Belts, Louvers)", type: "mechanical-maintenance", required: true },
+          { id: "tag-79", label: "Garage Door Operator and Door (Top of Garage Ramp)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "test"] },
+          { id: "tag-28", label: "Garage Exhaust Fans (Belts)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "clean", "test"] },
+          { id: "tag-45", label: "Garage Exhaust Fans (Belts, Louvers)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "clean", "test"] },
         ],
       },
       {
         id: "sprinkler-room",
         title: "Sprinkler Room",
         items: [
-          { id: "tag-29", label: "Booster Pumps D.C.W. (Pressure)", type: "mechanical-maintenance", required: true },
-          { id: "tag-30", label: "Fire Pump (Pressure, bearings)", type: "mechanical-maintenance", required: true },
-          { id: "tag-30a", label: "Jockey Pump", type: "mechanical-maintenance", required: true },
-          { id: "tag-31", label: "Exhaust Fan", type: "mechanical-maintenance", required: true },
-          { id: "tag-32", label: "Air Compressor Dry Sprinkler (Air Pressure, oil belt, clean air filter)", type: "mechanical-maintenance", required: true },
-          { id: "tag-33", label: "Elevator Sump Pump (Clean Sump Pump and pit annually)", type: "mechanical-maintenance", required: true },
+          { id: "tag-29", label: "Booster Pumps D.C.W. (Pressure)", type: "mechanical-maintenance", required: true, maintenanceActions: ["clean", "test"] },
+          { id: "tag-30", label: "Fire Pump (Pressure, bearings)", type: "mechanical-maintenance", required: true, maintenanceActions: ["clean", "test"] },
+          { id: "tag-30a", label: "Jockey Pump", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-31", label: "Exhaust Fan", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-32", label: "Air Compressor Dry Sprinkler (Air Pressure, oil belt, clean air filter)", type: "mechanical-maintenance", required: true, maintenanceActions: ["clean"] },
+          { id: "tag-33", label: "Elevator Sump Pump (Clean Sump Pump and pit annually)", type: "mechanical-maintenance", required: true, maintenanceActions: ["clean"] },
         ],
       },
       {
         id: "chiller-room",
         title: "Chiller Room",
         items: [
-          { id: "tag-34", label: "Chiller Room Heater", type: "mechanical-maintenance", required: true },
-          { id: "tag-39", label: "Exhaust Fan", type: "mechanical-maintenance", required: true },
-          { id: "tag-43", label: "Suction Guider, Dual Temp Pipes (Strainer)", type: "mechanical-maintenance", required: true },
-          { id: "tag-44", label: "Suction Guide (Strainer Monthly)", type: "mechanical-maintenance", required: true },
+          { id: "tag-34", label: "Chiller Room Heater", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-39", label: "Exhaust Fan", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-43", label: "Suction Guider, Dual Temp Pipes (Strainer)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil"] },
+          { id: "tag-44", label: "Suction Guide (Strainer Monthly)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil"] },
         ],
       },
       {
         id: "cooling-tower-maintenance",
         title: "Chiller and Cooling Tower Maintenance",
         items: [
-          { id: "tag-35", label: "Cooling Tower (Motor & Bearings)", type: "mechanical-maintenance", required: true },
-          { id: "tag-37", label: "Condenser Pump", type: "mechanical-maintenance", required: true },
-          { id: "tag-38", label: "Chemical Injector Pump", type: "mechanical-maintenance", required: true },
-          { id: "tag-40", label: "Chemical Filter", type: "mechanical-maintenance", required: true },
-          { id: "tag-41", label: "Dual Temp Circulation Pump #1 (Bearings)", type: "mechanical-maintenance", required: true },
-          { id: "tag-42", label: "Dual Temp Circulation Pump #2 (Bearings)", type: "mechanical-maintenance", required: true },
-          { id: "tag-36", label: "Y Strainer Fan Cooling Tower", type: "mechanical-maintenance", required: true },
+          { id: "tag-35", label: "Cooling Tower (Motor & Bearings)", type: "mechanical-maintenance", required: true, maintenanceActions: ["oil", "clean"] },
+          { id: "tag-37", label: "Condenser Pump", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-38", label: "Chemical Injector Pump", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-40", label: "Chemical Filter", type: "mechanical-maintenance", required: true, maintenanceActions: ["filter"] },
+          { id: "tag-41", label: "Dual Temp Circulation Pump #1 (Bearings)", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-42", label: "Dual Temp Circulation Pump #2 (Bearings)", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
+          { id: "tag-36", label: "Y Strainer Fan Cooling Tower", type: "mechanical-maintenance", required: true, maintenanceActions: [] },
         ],
       },
     ],
