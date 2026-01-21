@@ -287,12 +287,12 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
               if (typeof value === "object" && value !== null) {
                 const mechVal = value as MechanicalMaintenanceValue;
                 const checked: string[] = [];
-                if (mechVal.inspect) checked.push("✓INSPECT");
                 if (mechVal.oil) checked.push("✓OIL");
                 if (mechVal.clean) checked.push("✓CLEAN");
                 if (mechVal.test) checked.push("✓TEST");
                 if (mechVal.lube) checked.push("✓LUBE");
                 if (mechVal.filter) checked.push("✓FILTER");
+                if (mechVal.issue) checked.unshift("ISSUE");
                 displayValue = checked.length > 0 ? checked.join(" ") : "-";
                 noteOrDescription = mechVal.comments || "";
               }

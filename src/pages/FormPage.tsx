@@ -443,12 +443,20 @@ export default function FormPage() {
       const mainValue = response.mainValue;
       if (item.type === "ok-issue") return mainValue === false;
       if (item.type === "pass-fail") return mainValue === false;
+      if (item.type === "mechanical-maintenance") {
+        return typeof mainValue === "object" && mainValue !== null && (mainValue as MechanicalMaintenanceValue).issue === true;
+      }
       return false;
     });
 
     // Create issues in the issues store
     issueItems.forEach(item => {
-      const note = responses[item.id]?.note || "";
+      const raw = responses[item.id]?.value?.mainValue;
+      const mechComments =
+        item.type === "mechanical-maintenance" && typeof raw === "object" && raw !== null
+          ? (raw as MechanicalMaintenanceValue).comments || ""
+          : "";
+      const note = mechComments || responses[item.id]?.note || "";
       addIssue({
         title: item.label,
         description: note || `Issue found during ${template?.name || "inspection"}`,
