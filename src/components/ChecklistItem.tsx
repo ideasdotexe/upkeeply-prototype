@@ -169,13 +169,14 @@ export function ChecklistItem({
       updateField("mainValue", { ...mechValue, [field]: val });
     };
 
+    const visibleActions = actions.filter(({ key }) => allowed.has(key));
+
     return (
-      <div className="w-full space-y-3">
-        {/* Checkboxes */}
-        <div className="flex flex-wrap gap-3">
-          {actions
-            .filter(({ key }) => allowed.has(key))
-            .map(({ key, label }) => (
+      <div className="w-full">
+        {/* Actions (inline) */}
+        {visibleActions.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-3">
+            {visibleActions.map(({ key, label }) => (
               <div key={key} className="flex items-center gap-1.5">
                 <Checkbox
                   id={`${item.id}-${key}`}
@@ -191,10 +192,13 @@ export function ChecklistItem({
                 </label>
               </div>
             ))}
-        </div>
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">No actions</span>
+        )}
 
         {/* Note */}
-        <div className="space-y-1">
+        <div className="mt-2 space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Note</label>
           <Textarea
             value={mechValue.comments || ""}
@@ -327,16 +331,18 @@ export function ChecklistItem({
     const mechValue = (mainValue as MechanicalMaintenanceValue) || {};
     return (
       <div className="rounded-md border px-3 py-3 transition-all border-border/50 bg-card/50">
-        {/* Equipment Name */}
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <span className="text-sm font-medium text-foreground">{item.label}</span>
-            {item.required && (
-              <span className="text-destructive text-xs">*</span>
-            )}
+        {/* Row 1: Item | Actions | Issue | Delete (single line) */}
+        <div className="flex items-start gap-3">
+          <div className="min-w-[180px] max-w-[320px] flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground leading-snug">{item.label}</span>
+            {item.required && <span className="text-destructive text-xs">*</span>}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0 pt-0.5">
+            {renderMainInput()}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
             <Button
               type="button"
               size="sm"
@@ -371,8 +377,6 @@ export function ChecklistItem({
             )}
           </div>
         </div>
-        {/* Checkboxes and Comments */}
-        {renderMainInput()}
       </div>
     );
   }
