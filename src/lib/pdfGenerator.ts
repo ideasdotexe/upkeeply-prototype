@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { CompletedInspection, InspectionResponse } from "./inspectionsStore";
-import { getFormTemplate } from "./formTemplates";
+import { getFormTemplate, MechanicalMaintenanceValue } from "./formTemplates";
 import { supabase } from "@/integrations/supabase/client";
 
 interface LoginInfo {
@@ -253,7 +253,7 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
         // Handle both formats: 
         // 1. New format: { value: { mainValue: ..., description: ... }, note: ... }
         // 2. Old format: { value: "ok" | "issue" | ..., note: ... }
-        let value: string | boolean | number | { identifier?: string; status?: boolean | null } | null = null;
+        let value: string | boolean | number | { identifier?: string; status?: boolean | null } | MechanicalMaintenanceValue | null = null;
         
         if (response.value !== undefined && response.value !== null) {
           const rawValue = response.value;
@@ -261,7 +261,7 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
           // Check if it's the new ExtendedValue format with mainValue
           if (typeof rawValue === "object" && rawValue !== null && "mainValue" in rawValue) {
             const extendedValue = rawValue as { 
-              mainValue?: string | boolean | number | { identifier?: string; status?: boolean | null } | null;
+              mainValue?: string | boolean | number | { identifier?: string; status?: boolean | null } | MechanicalMaintenanceValue | null;
               description?: string;
               actionBy?: string;
               completionDate?: string;
@@ -282,6 +282,21 @@ export async function generateInspectionPDF(inspection: CompletedInspection): Pr
         
         if (value !== undefined && value !== null && value !== "") {
           switch (item.type) {
+            case "mechanical-maintenance":
+              // Handle mechanical maintenance checkboxes
+              if (typeof value === "object" && value !== null) {
+                const mechVal = value as MechanicalMaintenanceValue;
+                const checked: string[] = [];
+                if (mechVal.inspect) checked.push("✓INSPECT");
+                if (mechVal.oil) checked.push("✓OIL");
+                if (mechVal.clean) checked.push("✓CLEAN");
+                if (mechVal.test) checked.push("✓TEST");
+                if (mechVal.lube) checked.push("✓LUBE");
+                if (mechVal.filter) checked.push("✓FILTER");
+                displayValue = checked.length > 0 ? checked.join(" ") : "-";
+                noteOrDescription = mechVal.comments || "";
+              }
+              break;
             case "ok-issue":
               // Handle boolean values (true = OK, false = Issue)
               if (value === true) {
