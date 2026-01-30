@@ -1,21 +1,21 @@
 import { ClipboardList, Smartphone, X, Check } from "lucide-react";
 
 const beforeItems = [
-  "20+ minutes per inspection",
-  "Paper forms that get lost",
-  "No real-time visibility",
-  "Hours compiling monthly reports",
-  "Illegible handwriting",
-  "Data buried in filing cabinets",
+  "Paper forms get lost or damaged",
+  "Can't find past inspections",
+  "Board reports take 2+ hours",
+  "No visibility into recurring issues",
+  "Photos disconnected from notes",
+  "Audit preparation is a nightmare",
 ];
 
 const afterItems = [
-  "6 minutes per inspection",
-  "All data stored securely in the cloud",
-  "See everything in real-time",
-  "Instant monthly reports (PDF export)",
-  "Clear, structured data",
-  "Everything accessible from your phone",
+  "All inspections digital and accessible",
+  "Search any inspection in seconds",
+  "Reports generated in minutes",
+  "Spot patterns and trends automatically",
+  "Photos attached to every issue",
+  "Audit-ready records always available",
 ];
 
 const SolutionSection = () => {
@@ -26,6 +26,10 @@ const SolutionSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             The Old Way vs. The Upkeeply Way
           </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Stop digging through filing cabinets. Stop retyping handwritten notes. 
+            Stop losing track of recurring problems.
+          </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -35,9 +39,12 @@ const SolutionSection = () => {
               <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center">
                 <ClipboardList className="h-6 w-6 text-muted-foreground" />
               </div>
-              <h3 className="text-xl font-semibold text-muted-foreground">
-                Without Upkeeply
-              </h3>
+              <div>
+                <h3 className="text-xl font-semibold text-muted-foreground">
+                  Before Upkeeply
+                </h3>
+                <p className="text-sm text-muted-foreground/70">Paper chaos & frustration</p>
+              </div>
             </div>
             <ul className="space-y-4">
               {beforeItems.map((item, index) => (
@@ -59,9 +66,12 @@ const SolutionSection = () => {
                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                   <Smartphone className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-primary">
-                  With Upkeeply
-                </h3>
+                <div>
+                  <h3 className="text-xl font-semibold text-primary">
+                    With Upkeeply
+                  </h3>
+                  <p className="text-sm text-primary/70">Digital simplicity</p>
+                </div>
               </div>
               <ul className="space-y-4">
                 {afterItems.map((item, index) => (
