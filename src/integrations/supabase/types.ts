@@ -59,6 +59,137 @@ export type Database = {
         }
         Relationships: []
       }
+      inspections: {
+        Row: {
+          building_id: string
+          completed_at: string
+          completed_by: string | null
+          created_at: string
+          form_id: string
+          form_name: string
+          id: string
+          issues_count: number | null
+          items_count: number
+          responses: Json | null
+          status: string
+        }
+        Insert: {
+          building_id: string
+          completed_at?: string
+          completed_by?: string | null
+          created_at?: string
+          form_id: string
+          form_name: string
+          id?: string
+          issues_count?: number | null
+          items_count?: number
+          responses?: Json | null
+          status: string
+        }
+        Update: {
+          building_id?: string
+          completed_at?: string
+          completed_by?: string | null
+          created_at?: string
+          form_id?: string
+          form_name?: string
+          id?: string
+          issues_count?: number | null
+          items_count?: number
+          responses?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
+      issues: {
+        Row: {
+          building_id: string
+          closed_at: string | null
+          created_at: string
+          description: string | null
+          form_name: string | null
+          id: string
+          inspection_id: string | null
+          location: string | null
+          opened_at: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          building_id: string
+          closed_at?: string | null
+          created_at?: string
+          description?: string | null
+          form_name?: string | null
+          id?: string
+          inspection_id?: string | null
+          location?: string | null
+          opened_at?: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          building_id?: string
+          closed_at?: string | null
+          created_at?: string
+          description?: string | null
+          form_name?: string | null
+          id?: string
+          inspection_id?: string | null
+          location?: string | null
+          opened_at?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issues_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "inspections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_customizations: {
+        Row: {
+          building_id: string
+          created_at: string
+          custom_items: Json | null
+          form_id: string
+          id: string
+          removed_items: Json | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          building_id: string
+          created_at?: string
+          custom_items?: Json | null
+          form_id: string
+          id?: string
+          removed_items?: Json | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          building_id?: string
+          created_at?: string
+          custom_items?: Json | null
+          form_id?: string
+          id?: string
+          removed_items?: Json | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           building_id: string

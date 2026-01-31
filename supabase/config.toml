@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.get-building-info]
 verify_jwt = false
+
+[functions.inspections]
+verify_jwt = false
+
+[functions.issues-api]
+verify_jwt = false
+
+[functions.template-customizations]
+verify_jwt = false

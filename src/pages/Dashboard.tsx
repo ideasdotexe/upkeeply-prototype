@@ -16,8 +16,8 @@ import {
   Building2
 } from "lucide-react";
 import { formTemplates, getFormsByFrequency } from "@/lib/formTemplates";
-import { getOpenIssuesCount } from "@/lib/issuesStore";
-import { getInspections, CompletedInspection } from "@/lib/inspectionsStore";
+import { getOpenIssuesCount } from "@/lib/issuesApi";
+import { fetchInspections, CompletedInspection } from "@/lib/inspectionsApi";
 import { supabase } from "@/integrations/supabase/client";
 
 interface BuildingInfo {
@@ -60,8 +60,15 @@ export default function Dashboard() {
   const [buildingInfo, setBuildingInfo] = useState<BuildingInfo | null>(null);
 
   useEffect(() => {
-    setOpenIssuesCount(getOpenIssuesCount());
-    setRecentInspections(getInspections().slice(0, 5));
+    const loadData = async () => {
+      const count = await getOpenIssuesCount();
+      setOpenIssuesCount(count);
+      
+      const inspections = await fetchInspections();
+      setRecentInspections(inspections.slice(0, 5));
+    };
+    
+    loadData();
     
     const loginInfo = localStorage.getItem("loginInfo");
     if (loginInfo) {

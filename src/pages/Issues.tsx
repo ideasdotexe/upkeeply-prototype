@@ -10,33 +10,55 @@ import {
   Clock, 
   MapPin,
   ClipboardList,
-  RotateCcw
+  RotateCcw,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
-import { Issue, getIssues, resolveIssue, reopenIssue } from "@/lib/issuesStore";
+import { Issue, fetchIssues, resolveIssue as resolveIssueApi, reopenIssue as reopenIssueApi } from "@/lib/issuesApi";
 import { toast } from "sonner";
 
 export default function Issues() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [activeTab, setActiveTab] = useState("open");
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    setIssues(getIssues());
+    loadIssues();
   }, []);
+
+  const loadIssues = async () => {
+    setLoading(true);
+    const data = await fetchIssues();
+    setIssues(data);
+    setLoading(false);
+  };
 
   const openIssues = issues.filter(i => i.status === "open");
   const resolvedIssues = issues.filter(i => i.status === "resolved");
 
-  const handleResolve = (issueId: string) => {
-    const updatedIssues = resolveIssue(issueId);
-    setIssues(updatedIssues);
-    toast.success("Issue marked as resolved");
+  const handleResolve = async (issueId: string) => {
+    setActionLoading(issueId);
+    const updated = await resolveIssueApi(issueId);
+    if (updated) {
+      setIssues(prev => prev.map(i => i.id === issueId ? updated : i));
+      toast.success("Issue marked as resolved");
+    } else {
+      toast.error("Failed to resolve issue");
+    }
+    setActionLoading(null);
   };
 
-  const handleReopen = (issueId: string) => {
-    const updatedIssues = reopenIssue(issueId);
-    setIssues(updatedIssues);
-    toast.info("Issue reopened");
+  const handleReopen = async (issueId: string) => {
+    setActionLoading(issueId);
+    const updated = await reopenIssueApi(issueId);
+    if (updated) {
+      setIssues(prev => prev.map(i => i.id === issueId ? updated : i));
+      toast.info("Issue reopened");
+    } else {
+      toast.error("Failed to reopen issue");
+    }
+    setActionLoading(null);
   };
 
   const getPriorityColor = (priority: Issue["priority"]) => {
@@ -48,6 +70,16 @@ export default function Issues() {
   };
 
   const displayedIssues = activeTab === "open" ? openIssues : resolvedIssues;
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -163,8 +195,13 @@ export default function Issues() {
                             <Button 
                               onClick={() => handleResolve(issue.id)}
                               className="gap-2"
+                              disabled={actionLoading === issue.id}
                             >
-                              <CheckCircle2 className="h-4 w-4" />
+                              {actionLoading === issue.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="h-4 w-4" />
+                              )}
                               Mark Complete
                             </Button>
                           ) : (
@@ -172,8 +209,13 @@ export default function Issues() {
                               variant="outline"
                               onClick={() => handleReopen(issue.id)}
                               className="gap-2"
+                              disabled={actionLoading === issue.id}
                             >
-                              <RotateCcw className="h-4 w-4" />
+                              {actionLoading === issue.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RotateCcw className="h-4 w-4" />
+                              )}
                               Reopen
                             </Button>
                           )}
