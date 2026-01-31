@@ -65,8 +65,9 @@ import {
   RotateCcw
 } from "lucide-react";
 import { getFormTemplate, FormSection, ChecklistItem as ChecklistItemType, ChecklistItemType as ItemType, itemTemplateLibrary, ItemTemplate, MechanicalMaintenanceValue } from "@/lib/formTemplates";
-import { addIssue } from "@/lib/issuesStore";
-import { loadTemplateCustomization, saveTemplateCustomization, clearTemplateCustomization, CustomItemData, customDataToChecklistItem } from "@/lib/formTemplateStore";
+import { createIssue } from "@/lib/issuesApi";
+import { createInspection } from "@/lib/inspectionsApi";
+import { loadTemplateCustomization as loadTemplateFromApi, saveTemplateCustomization as saveTemplateToApi, clearTemplateCustomization as clearTemplateFromApi, customDataToChecklistItem, CustomItemData } from "@/lib/templateCustomizationsApi";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -142,33 +143,37 @@ export default function FormPage() {
   useEffect(() => {
     if (!formId || templateLoaded) return;
     
-    const saved = loadTemplateCustomization(formId);
-    if (saved) {
-      // Convert saved custom items to CustomSection format
-      const sections: CustomSection[] = [];
-      Object.entries(saved.customItems).forEach(([sectionId, items]) => {
-        if (items.length > 0) {
-          const templateSection = template?.sections.find(s => s.id === sectionId);
-          sections.push({
-            id: sectionId,
-            title: templateSection?.title || sectionId,
-            items: items.map(item => ({
-              ...customDataToChecklistItem(item),
-              isCustom: true,
-            })),
-          });
-        }
-      });
-      setCustomSections(sections);
-      
-      // Convert saved removed items to Set format
-      const removed: RemovedItems = {};
-      Object.entries(saved.removedItems).forEach(([sectionId, itemIds]) => {
-        removed[sectionId] = new Set(itemIds);
-      });
-      setRemovedItems(removed);
-    }
-    setTemplateLoaded(true);
+    const loadCustomization = async () => {
+      const saved = await loadTemplateFromApi(formId);
+      if (saved) {
+        // Convert saved custom items to CustomSection format
+        const sections: CustomSection[] = [];
+        Object.entries(saved.customItems).forEach(([sectionId, items]) => {
+          if (items.length > 0) {
+            const templateSection = template?.sections.find(s => s.id === sectionId);
+            sections.push({
+              id: sectionId,
+              title: templateSection?.title || sectionId,
+              items: items.map(item => ({
+                ...customDataToChecklistItem(item),
+                isCustom: true,
+              })),
+            });
+          }
+        });
+        setCustomSections(sections);
+        
+        // Convert saved removed items to Set format
+        const removed: RemovedItems = {};
+        Object.entries(saved.removedItems).forEach(([sectionId, itemIds]) => {
+          removed[sectionId] = new Set(itemIds);
+        });
+        setRemovedItems(removed);
+      }
+      setTemplateLoaded(true);
+    };
+    
+    loadCustomization();
   }, [formId, template, templateLoaded]);
 
   // Save template customization whenever custom items or removed items change
@@ -196,7 +201,8 @@ export default function FormPage() {
       removedItemsArray[sectionId] = Array.from(itemSet);
     });
     
-    saveTemplateCustomization(formId, customItems, removedItemsArray);
+    // Save to database
+    saveTemplateToApi(formId, customItems, removedItemsArray);
   }, [formId, customSections, removedItems, templateLoaded]);
 
   // Merge template sections with custom sections and filter removed items
@@ -331,10 +337,10 @@ export default function FormPage() {
   }, [itemToDelete]);
 
   // Reset template to default
-  const handleResetTemplate = useCallback(() => {
+  const handleResetTemplate = useCallback(async () => {
     if (!formId) return;
     
-    clearTemplateCustomization(formId);
+    await clearTemplateFromApi(formId);
     setCustomSections([]);
     setRemovedItems({});
     setResetDialogOpen(false);
@@ -434,7 +440,6 @@ export default function FormPage() {
 
   const handleSubmit = async () => {
     setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     
     // Find items marked as issues
     const issueItems = allItems.filter(item => {
@@ -449,46 +454,42 @@ export default function FormPage() {
       return false;
     });
 
-    // Create issues in the issues store
-    issueItems.forEach(item => {
+    // Create issues in the database
+    for (const item of issueItems) {
       const raw = responses[item.id]?.value?.mainValue;
       const mechComments =
         item.type === "mechanical-maintenance" && typeof raw === "object" && raw !== null
           ? (raw as MechanicalMaintenanceValue).comments || ""
           : "";
       const note = mechComments || responses[item.id]?.note || "";
-      addIssue({
+      await createIssue({
         title: item.label,
         description: note || `Issue found during ${template?.name || "inspection"}`,
         location: "To be specified",
         priority: "medium",
-        status: "open",
         formName: template?.name || "",
-        openedAt: new Date().toISOString(),
       });
-    });
+    }
 
-    // Save to inspections store with actual responses
-    const newInspection = {
-      id: `insp-${Date.now()}`,
+    // Save inspection to database
+    const inspection = await createInspection({
       formId: formId || "",
       formName: template?.name || "",
       completedAt: new Date().toISOString(),
-      status: issueItems.length > 0 ? "issues" as const : "completed" as const,
+      status: issueItems.length > 0 ? "issues" : "completed",
       itemsCount: allItems.length,
       issuesCount: issueItems.length > 0 ? issueItems.length : undefined,
-      responses: responses,
-    };
-
-    // Get existing inspections and add new one
-    const stored = localStorage.getItem("upkeeply_inspections");
-    const inspections = stored ? JSON.parse(stored) : [];
-    inspections.unshift(newInspection);
-    localStorage.setItem("upkeeply_inspections", JSON.stringify(inspections));
+      responses: responses as Record<string, { value: string | boolean | number | { identifier?: string; status?: boolean | null } | null; note?: string }>,
+    });
 
     setIsSaving(false);
-    toast.success("Inspection submitted successfully!");
-    navigate("/calendar");
+    
+    if (inspection) {
+      toast.success("Inspection submitted successfully!");
+      navigate("/calendar");
+    } else {
+      toast.error("Failed to save inspection. Please try again.");
+    }
   };
 
   // Get all possible sections for Add Item dialog

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +10,11 @@ import {
   AlertTriangle,
   Clock,
   Download,
-  FileDown
+  FileDown,
+  Loader2
 } from "lucide-react";
 import { format, isSameDay, isSameMonth } from "date-fns";
-import { getInspections, CompletedInspection } from "@/lib/inspectionsStore";
+import { fetchInspections, CompletedInspection } from "@/lib/inspectionsApi";
 import { cn } from "@/lib/utils";
 import { generateInspectionPDF } from "@/lib/pdfGenerator";
 import { toast } from "@/hooks/use-toast";
@@ -21,7 +22,19 @@ import { toast } from "@/hooks/use-toast";
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const inspections = getInspections();
+  const [inspections, setInspections] = useState<CompletedInspection[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadInspections();
+  }, []);
+
+  const loadInspections = async () => {
+    setLoading(true);
+    const data = await fetchInspections();
+    setInspections(data);
+    setLoading(false);
+  };
 
   // Get unique dates that have inspections
   const datesWithInspections = inspections.map(i => new Date(i.completedAt));
@@ -77,6 +90,16 @@ export default function CalendarPage() {
       fontWeight: "bold" as const,
     },
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
