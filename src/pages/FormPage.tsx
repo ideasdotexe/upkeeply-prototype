@@ -58,7 +58,6 @@ import {
   Clock, 
   CheckCircle2,
   AlertCircle,
-  Building2,
   Plus,
   Check,
   ChevronsUpDown,
@@ -804,20 +803,6 @@ export default function FormPage() {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            {/* Building Info */}
-            <Card className="border-border/50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <CardTitle className="text-sm font-medium">Building</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="font-medium text-sm">123 Main Street</p>
-                <p className="text-xs text-muted-foreground">Residential · 48 units</p>
-              </CardContent>
-            </Card>
-
             {/* Summary */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
