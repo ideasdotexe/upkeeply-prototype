@@ -59,6 +59,42 @@ export type Database = {
         }
         Relationships: []
       }
+      drafts: {
+        Row: {
+          building_id: string
+          created_at: string
+          custom_sections: Json | null
+          form_id: string
+          id: string
+          removed_items: Json | null
+          responses: Json | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          building_id: string
+          created_at?: string
+          custom_sections?: Json | null
+          form_id: string
+          id?: string
+          removed_items?: Json | null
+          responses?: Json | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          building_id?: string
+          created_at?: string
+          custom_sections?: Json | null
+          form_id?: string
+          id?: string
+          removed_items?: Json | null
+          responses?: Json | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       inspections: {
         Row: {
           building_id: string

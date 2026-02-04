@@ -66,7 +66,9 @@ import {
 import { getFormTemplate, FormSection, ChecklistItem as ChecklistItemType, ChecklistItemType as ItemType, itemTemplateLibrary, ItemTemplate, MechanicalMaintenanceValue } from "@/lib/formTemplates";
 import { createIssue } from "@/lib/issuesApi";
 import { createInspection } from "@/lib/inspectionsApi";
+import { fetchDraft, saveDraft, deleteDraft } from "@/lib/draftsApi";
 import { loadTemplateCustomization as loadTemplateFromApi, saveTemplateCustomization as saveTemplateToApi, clearTemplateCustomization as clearTemplateFromApi, customDataToChecklistItem, CustomItemData } from "@/lib/templateCustomizationsApi";
+import { generateInspectionPDF } from "@/lib/pdfGenerator";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -124,6 +126,12 @@ export default function FormPage() {
   
   // Reset template confirmation dialog state
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  
+  // Submit confirmation dialog state
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  
+  // Draft loading state
+  const [draftLoaded, setDraftLoaded] = useState(false);
 
   // Load logged-in user's name from localStorage
   useEffect(() => {
@@ -174,6 +182,29 @@ export default function FormPage() {
     
     loadCustomization();
   }, [formId, template, templateLoaded]);
+
+  // Load saved draft responses on mount
+  useEffect(() => {
+    if (!formId || draftLoaded) return;
+    
+    const loadDraft = async () => {
+      const saved = await fetchDraft(formId);
+      if (saved && saved.responses) {
+        // Convert saved responses to FormResponse format
+        const loadedResponses: FormResponse = {};
+        Object.entries(saved.responses).forEach(([itemId, response]) => {
+          if (response && typeof response === "object") {
+            loadedResponses[itemId] = response as FormResponse[string];
+          }
+        });
+        setResponses(loadedResponses);
+        toast.info("Draft loaded");
+      }
+      setDraftLoaded(true);
+    };
+    
+    loadDraft();
+  }, [formId, draftLoaded]);
 
   // Save template customization whenever custom items or removed items change
   useEffect(() => {
@@ -427,17 +458,62 @@ export default function FormPage() {
   }, [newItemLabel, newItemType, newItemSection, newItemUnit, selectedTemplate, template]);
 
   const handleSaveDraft = async () => {
+    if (!formId) return;
+    
     setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    
+    // Convert removedItems Sets to arrays for storage
+    const removedItemsArray: Record<string, string[]> = {};
+    Object.entries(removedItems).forEach(([sectionId, itemSet]) => {
+      removedItemsArray[sectionId] = Array.from(itemSet);
+    });
+    
+    const success = await saveDraft({
+      formId,
+      responses: responses as Record<string, unknown>,
+      customSections: customSections,
+      removedItems: removedItemsArray,
+    });
+    
     setIsSaving(false);
-    toast.success("Draft saved successfully");
+    
+    if (success) {
+      toast.success("Draft saved successfully");
+    } else {
+      toast.error("Failed to save draft");
+    }
   };
 
-  const handleDownloadPDF = () => {
-    toast.info("PDF generation will be available once Cloud is enabled");
+  const handleDownloadPDF = async () => {
+    if (!template) return;
+    
+    try {
+      const inspection = {
+        id: `preview-${Date.now()}`,
+        formId: formId || "",
+        formName: template.name,
+        completedAt: new Date().toISOString(),
+        status: issuesCount > 0 ? "issues" as const : "completed" as const,
+        itemsCount: allItems.length,
+        issuesCount: issuesCount > 0 ? issuesCount : undefined,
+        responses: responses as Record<string, { value: string | boolean | number | { identifier?: string; status?: boolean | null } | null; note?: string }>,
+      };
+      
+      await generateInspectionPDF(inspection);
+      toast.success("PDF downloaded");
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      toast.error("Failed to generate PDF");
+    }
+  };
+  
+  // Open submit confirmation dialog
+  const handleSubmitClick = () => {
+    setSubmitDialogOpen(true);
   };
 
   const handleSubmit = async () => {
+    setSubmitDialogOpen(false);
     setIsSaving(true);
     
     // Find items marked as issues
@@ -480,6 +556,11 @@ export default function FormPage() {
       issuesCount: issueItems.length > 0 ? issueItems.length : undefined,
       responses: responses as Record<string, { value: string | boolean | number | { identifier?: string; status?: boolean | null } | null; note?: string }>,
     });
+
+    // Delete the draft after successful submission
+    if (inspection && formId) {
+      await deleteDraft(formId);
+    }
 
     setIsSaving(false);
     
@@ -832,11 +913,20 @@ export default function FormPage() {
             <div className="space-y-2">
               <Button
                 className="w-full gap-2"
-                onClick={handleSubmit}
+                onClick={handleSubmitClick}
                 disabled={isSaving}
               >
                 <CheckCircle2 className="h-4 w-4" />
                 Submit Inspection
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={handleDownloadPDF}
+                disabled={isSaving}
+              >
+                <Save className="h-4 w-4" />
+                Download PDF
               </Button>
               <Button
                 variant="ghost"
@@ -880,6 +970,27 @@ export default function FormPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleResetTemplate}>Reset Template</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Submit Confirmation Dialog */}
+      <AlertDialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit Inspection</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to submit this inspection? This will finalize the inspection and create issues for any items marked as problems.
+              {issuesCount > 0 && (
+                <span className="block mt-2 font-medium text-warning">
+                  {issuesCount} issue{issuesCount > 1 ? "s" : ""} will be created.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSubmit}>Submit Inspection</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
