@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.template-customizations]
 verify_jwt = false
+
+[functions.drafts]
+verify_jwt = false
