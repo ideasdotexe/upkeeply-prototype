@@ -114,10 +114,10 @@ export async function resolveIssue(issueId: string): Promise<Issue | null> {
   if (!token) return null;
 
   try {
-    const { data, error } = await supabase.functions.invoke(`issues-api?id=${issueId}`, {
-      method: "PATCH",
+    const { data, error } = await supabase.functions.invoke("issues-api", {
+      method: "POST",
       headers: { Authorization: `Bearer ${token}` },
-      body: { status: "resolved" },
+      body: { action: "update", id: issueId, status: "resolved" },
     });
 
     if (error) {
@@ -149,10 +149,10 @@ export async function reopenIssue(issueId: string): Promise<Issue | null> {
   if (!token) return null;
 
   try {
-    const { data, error } = await supabase.functions.invoke(`issues-api?id=${issueId}`, {
-      method: "PATCH",
+    const { data, error } = await supabase.functions.invoke("issues-api", {
+      method: "POST",
       headers: { Authorization: `Bearer ${token}` },
-      body: { status: "open" },
+      body: { action: "update", id: issueId, status: "open" },
     });
 
     if (error) {
