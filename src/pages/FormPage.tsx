@@ -920,15 +920,6 @@ export default function FormPage() {
                 Submit Inspection
               </Button>
               <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={handleDownloadPDF}
-                disabled={isSaving}
-              >
-                <Save className="h-4 w-4" />
-                Download PDF
-              </Button>
-              <Button
                 variant="ghost"
                 className="w-full gap-2"
                 onClick={handleSaveDraft}

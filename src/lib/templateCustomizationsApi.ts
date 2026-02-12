@@ -21,11 +21,11 @@ export interface TemplateCustomization {
 
 // Get auth token from session
 function getAuthToken(): string | null {
-  const sessionStr = localStorage.getItem("upkeeply_session");
-  if (sessionStr) {
+  const loginInfo = localStorage.getItem("loginInfo");
+  if (loginInfo) {
     try {
-      const session = JSON.parse(sessionStr);
-      return session.token;
+      const parsed = JSON.parse(loginInfo);
+      return parsed.sessionToken || null;
     } catch {
       return null;
     }
