@@ -25,11 +25,11 @@ function getStorageKey(buildingId: string, formId: string): string {
 
 // Get current building ID from session
 export function getCurrentBuildingId(): string {
-  const sessionStr = localStorage.getItem("upkeeply_session");
-  if (sessionStr) {
+  const loginInfo = localStorage.getItem("loginInfo");
+  if (loginInfo) {
     try {
-      const session = JSON.parse(sessionStr);
-      return session.buildingId || "default";
+      const parsed = JSON.parse(loginInfo);
+      return parsed.buildingId || "default";
     } catch {
       return "default";
     }
