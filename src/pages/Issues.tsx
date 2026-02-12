@@ -4,6 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -22,6 +32,8 @@ export default function Issues() {
   const [activeTab, setActiveTab] = useState("open");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
+  const [issueToResolve, setIssueToResolve] = useState<string | null>(null);
 
   useEffect(() => {
     loadIssues();
@@ -37,16 +49,24 @@ export default function Issues() {
   const openIssues = issues.filter(i => i.status === "open");
   const resolvedIssues = issues.filter(i => i.status === "resolved");
 
-  const handleResolve = async (issueId: string) => {
-    setActionLoading(issueId);
-    const updated = await resolveIssueApi(issueId);
+  const handleResolveClick = (issueId: string) => {
+    setIssueToResolve(issueId);
+    setResolveDialogOpen(true);
+  };
+
+  const handleConfirmResolve = async () => {
+    if (!issueToResolve) return;
+    setResolveDialogOpen(false);
+    setActionLoading(issueToResolve);
+    const updated = await resolveIssueApi(issueToResolve);
     if (updated) {
-      setIssues(prev => prev.map(i => i.id === issueId ? updated : i));
+      setIssues(prev => prev.map(i => i.id === issueToResolve ? updated : i));
       toast.success("Issue marked as resolved");
     } else {
       toast.error("Failed to resolve issue");
     }
     setActionLoading(null);
+    setIssueToResolve(null);
   };
 
   const handleReopen = async (issueId: string) => {
@@ -193,7 +213,7 @@ export default function Issues() {
                         <div className="flex lg:flex-col gap-2 shrink-0">
                           {issue.status === "open" ? (
                             <Button 
-                              onClick={() => handleResolve(issue.id)}
+                              onClick={() => handleResolveClick(issue.id)}
                               className="gap-2"
                               disabled={actionLoading === issue.id}
                             >
@@ -202,7 +222,7 @@ export default function Issues() {
                               ) : (
                                 <CheckCircle2 className="h-4 w-4" />
                               )}
-                              Mark Complete
+                              Resolved
                             </Button>
                           ) : (
                             <Button 
@@ -228,6 +248,22 @@ export default function Issues() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Resolve Confirmation Dialog */}
+        <AlertDialog open={resolveDialogOpen} onOpenChange={setResolveDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Resolve Issue</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to mark this issue as resolved? You can reopen it later if needed.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIssueToResolve(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmResolve}>Resolve</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
