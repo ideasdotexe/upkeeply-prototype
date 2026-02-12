@@ -81,10 +81,44 @@ serve(async (req) => {
       });
     }
 
-    // POST - Create new issue
+    // POST - Create new issue or update issue
     if (method === "POST") {
       const body = await req.json();
       
+      // Handle update action
+      if (body.action === "update" && body.id) {
+        const updates: Record<string, unknown> = {};
+        if (body.status === "resolved") {
+          updates.status = "resolved";
+          updates.closed_at = new Date().toISOString();
+        } else if (body.status === "open") {
+          updates.status = "open";
+          updates.closed_at = null;
+        }
+
+        const { data, error } = await supabase
+          .from("issues")
+          .update(updates)
+          .eq("id", body.id)
+          .eq("building_id", buildingId)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error updating issue:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        console.log("Updated issue:", data.id, "status:", data.status);
+        return new Response(JSON.stringify({ issue: data }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Create new issue
       const { data, error } = await supabase
         .from("issues")
         .insert({
@@ -116,47 +150,6 @@ serve(async (req) => {
       });
     }
 
-    // PATCH - Update issue (resolve/reopen)
-    if (method === "PATCH") {
-      if (!issueId) {
-        return new Response(JSON.stringify({ error: "Issue ID required" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const body = await req.json();
-      const updates: Record<string, unknown> = {};
-
-      if (body.status === "resolved") {
-        updates.status = "resolved";
-        updates.closed_at = new Date().toISOString();
-      } else if (body.status === "open") {
-        updates.status = "open";
-        updates.closed_at = null;
-      }
-
-      const { data, error } = await supabase
-        .from("issues")
-        .update(updates)
-        .eq("id", issueId)
-        .eq("building_id", buildingId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error updating issue:", error);
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      console.log("Updated issue:", data.id, "status:", data.status);
-      return new Response(JSON.stringify({ issue: data }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     // DELETE - Clear all issues for building
     if (method === "DELETE") {
